@@ -1,0 +1,63 @@
+{
+  "name": "agentcv — Twój Agent CV",
+  "short_name": "agentcv",
+  "description": "Agent Pracuś napisze Twoje CV w 5 minut. ATS-friendly, po polsku, RODO compliant. Pierwsze CV gratis.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#F5F1E8",
+  "theme_color": "#0A0E1A",
+  "lang": "pl-PL",
+  "dir": "ltr",
+  "categories": ["productivity", "business", "utilities"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Otwórz kreator CV",
+      "short_name": "Kreator",
+      "description": "Zacznij pisać CV z Pracusiem",
+      "url": "/kreator",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Szablony CV",
+      "short_name": "Szablony",
+      "description": "5 szablonów testowanych w ATS",
+      "url": "/szablony",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Poradniki CV",
+      "short_name": "Poradniki",
+      "description": "Jak napisać CV, ATS, rozmowa kwalifikacyjna",
+      "url": "/poradniki",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}

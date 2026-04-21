@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" fill="none">
+  <defs>
+    <filter id="grain">
+      <feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="2" seed="8" stitchTiles="stitch"/>
+      <feColorMatrix values="0 0 0 0 0.94  0 0 0 0 0.9  0 0 0 0 0.8  0 0 0 0.12 0"/>
+    </filter>
+    <linearGradient id="saffron" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#E8B64C"/>
+      <stop offset="1" stop-color="#D99E2C"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="#0A0E1A"/>
+  <rect width="1200" height="630" filter="url(#grain)"/>
+
+  <!-- Decorative saffron stroke -->
+  <path d="M-50 480 C 300 300, 650 560, 950 380 S 1400 240, 1600 440" stroke="url(#saffron)" stroke-width="2" fill="none" opacity="0.35"/>
+  <path d="M-50 520 C 350 340, 700 600, 1000 420 S 1400 280, 1650 480" stroke="url(#saffron)" stroke-width="1" stroke-dasharray="4 12" fill="none" opacity="0.25"/>
+
+  <!-- Eyebrow -->
+  <g transform="translate(80,110)">
+    <rect x="0" y="9" width="40" height="1.5" fill="#F5F1E8" opacity="0.6"/>
+    <circle cx="60" cy="10" r="3" fill="#3F7D58"/>
+    <text x="72" y="14" font-family="JetBrains Mono, ui-monospace, monospace" font-size="13" letter-spacing="2" fill="#F5F1E8" opacity="0.6">AGENT PRACUŚ · AGENTCV.PL</text>
+  </g>
+
+  <!-- Headline -->
+  <text x="80" y="230" font-family="Syne, system-ui, sans-serif" font-weight="800" font-size="78" letter-spacing="-3" fill="#F5F1E8">Twój agent pisze</text>
+  <text x="80" y="315" font-family="Syne, system-ui, sans-serif" font-weight="800" font-size="78" letter-spacing="-3" fill="#F5F1E8">CV, które dostaje</text>
+
+  <!-- Highlighted word -->
+  <text x="80" y="400" font-family="Syne, system-ui, sans-serif" font-weight="800" font-size="78" letter-spacing="-3" fill="#F5F1E8">rozmowy.</text>
+  <rect x="80" y="384" width="300" height="14" fill="#E8B64C" opacity="0.55"/>
+
+  <!-- Subtitle -->
+  <text x="80" y="470" font-family="Manrope, system-ui, sans-serif" font-size="22" fill="#F5F1E8" opacity="0.7">Pierwsze CV za darmo · ATS · RODO · po polsku</text>
+
+  <!-- Brand block -->
+  <g transform="translate(80,550)">
+    <text font-family="Syne, system-ui, sans-serif" font-weight="800" font-size="44" letter-spacing="-2" fill="#F5F1E8">agentcv</text>
+    <circle cx="195" cy="12" r="5" fill="#E8B64C"/>
+    <text x="208" y="18" font-family="JetBrains Mono, ui-monospace, monospace" font-size="14" letter-spacing="1.2" fill="#F5F1E8" opacity="0.55">.PL</text>
+  </g>
+
+  <!-- Rating badge -->
+  <g transform="translate(900,120)">
+    <rect x="0" y="0" width="220" height="88" rx="44" fill="#F5F1E8" opacity="0.05" stroke="#F5F1E8" stroke-opacity="0.15"/>
+    <text x="20" y="38" font-family="Syne, system-ui, sans-serif" font-weight="800" font-size="40" fill="#F5F1E8">4.8</text>
+    <text x="80" y="36" font-family="Manrope, system-ui, sans-serif" font-size="13" fill="#E8B64C">★ ★ ★ ★ ★</text>
+    <text x="80" y="58" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11" letter-spacing="1" fill="#F5F1E8" opacity="0.55">2 341 OPINII</text>
+    <text x="20" y="74" font-family="Manrope, system-ui, sans-serif" font-size="12" fill="#F5F1E8" opacity="0.6">87% zdawalność ATS · 12k+ CV</text>
+  </g>
+</svg>

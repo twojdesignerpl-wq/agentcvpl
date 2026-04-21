@@ -1,0 +1,42 @@
+User-agent: *
+Allow: /
+Disallow: /kreator
+Disallow: /api
+
+# AI crawlers explicitly allowed (agentcv is AI-friendly) — except private routes
+User-agent: GPTBot
+Allow: /
+Disallow: /kreator
+Disallow: /api
+
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /kreator
+Disallow: /api
+
+User-agent: Claude-Web
+Allow: /
+Disallow: /kreator
+Disallow: /api
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /kreator
+Disallow: /api
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /kreator
+Disallow: /api
+
+User-agent: Google-Extended
+Allow: /
+Disallow: /kreator
+Disallow: /api
+
+User-agent: CCBot
+Allow: /
+Disallow: /kreator
+Disallow: /api
+
+Sitemap: https://agentcv.pl/sitemap.xml

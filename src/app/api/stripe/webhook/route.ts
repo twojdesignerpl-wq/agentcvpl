@@ -1,0 +1,94 @@
+import { NextResponse } from "next/server";
+import type Stripe from "stripe";
+import { getStripeServer } from "@/lib/stripe/server";
+import { createSupabaseServiceClient } from "@/lib/supabase/server";
+
+export const runtime = "nodejs";
+export const maxDuration = 30;
+
+/**
+ * Stripe webhook handler. Weryfikuje signature, aktualizuje plan usera.
+ *
+ * W Stripe Dashboard → Webhooks:
+ * — URL: `https://agentcv.pl/api/stripe/webhook`
+ * — Events: `checkout.session.completed`, `customer.subscription.updated`,
+ *   `customer.subscription.deleted`
+ * — Skopiuj signing secret → env `STRIPE_WEBHOOK_SECRET`.
+ */
+export async function POST(request: Request): Promise<Response> {
+  const signature = request.headers.get("stripe-signature");
+  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  if (!signature || !secret) {
+    return NextResponse.json({ error: "Missing signature or secret" }, { status: 400 });
+  }
+
+  const rawBody = await request.text();
+
+  let event: Stripe.Event;
+  try {
+    const stripe = getStripeServer();
+    event = stripe.webhooks.constructEvent(rawBody, signature, secret);
+  } catch (err) {
+    console.error("[stripe:webhook] Signature verification failed:", (err as Error).message);
+    return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+  }
+
+  try {
+    switch (event.type) {
+      case "checkout.session.completed": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        const userId = session.client_reference_id ?? session.metadata?.user_id;
+        const plan = session.metadata?.plan;
+        const customerId =
+          typeof session.customer === "string" ? session.customer : session.customer?.id;
+        if (userId && plan) {
+          await updateUserPlan(userId, plan, customerId);
+        }
+        break;
+      }
+      case "customer.subscription.updated": {
+        const sub = event.data.object as Stripe.Subscription;
+        const userId = sub.metadata?.user_id;
+        const plan = sub.metadata?.plan;
+        const status = sub.status;
+        const effective = status === "active" || status === "trialing" ? plan : "free";
+        if (userId && effective) {
+          await updateUserPlan(userId, effective);
+        }
+        break;
+      }
+      case "customer.subscription.deleted": {
+        const sub = event.data.object as Stripe.Subscription;
+        const userId = sub.metadata?.user_id;
+        if (userId) {
+          await updateUserPlan(userId, "free");
+        }
+        break;
+      }
+      default:
+        // ignorujemy inne eventy
+        break;
+    }
+
+    return NextResponse.json({ received: true });
+  } catch (err) {
+    console.error("[stripe:webhook] Handler error:", err);
+    return NextResponse.json({ error: "Handler error" }, { status: 500 });
+  }
+}
+
+async function updateUserPlan(
+  userId: string,
+  plan: string,
+  stripeCustomerId?: string,
+): Promise<void> {
+  const admin = createSupabaseServiceClient();
+  const appMetadata: Record<string, unknown> = { plan };
+  if (stripeCustomerId) appMetadata.stripe_customer_id = stripeCustomerId;
+
+  const { error } = await admin.auth.admin.updateUserById(userId, {
+    app_metadata: appMetadata,
+  });
+  if (error) throw error;
+}
