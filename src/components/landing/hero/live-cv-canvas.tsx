@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
 import {
   motion,
   useMotionValue,
@@ -235,7 +236,7 @@ export function LiveCvCanvas() {
       <motion.div
         ref={canvasRef}
         style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-        className="relative min-h-[520px] w-full overflow-hidden rounded-[2px] bg-[color:var(--cream-soft)] ring-ink grain sm:aspect-[1/1.1] sm:min-h-0"
+        className="relative min-h-[440px] w-full overflow-hidden rounded-[2px] bg-[color:var(--cream-soft)] ring-ink grain sm:aspect-[1/1.1] sm:min-h-0"
       >
         {/* Paper header ink stripe */}
         <div className="absolute left-0 right-0 top-0 h-1.5 bg-[color:var(--ink)]" />
@@ -248,17 +249,17 @@ export function LiveCvCanvas() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -14 }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            className="relative flex h-full flex-col gap-3 px-5 pb-5 pt-9 sm:px-9 sm:pt-12"
+            className="relative flex h-full flex-col gap-2 px-4 pb-4 pt-6 sm:gap-3 sm:px-9 sm:pb-5 sm:pt-12"
           >
             {/* Nameplate */}
-            <div className="border-b border-[color:var(--ink)]/12 pb-3">
-              <p className="mono-label text-[color:var(--ink)]/50">
+            <div className="border-b border-[color:var(--ink)]/12 pb-2 sm:pb-3">
+              <p className="mono-label text-[0.52rem] tracking-[0.12em] text-[color:var(--ink)]/50 sm:text-[0.6rem]">
                 CV · PRACUŚ · {persona.company.toUpperCase()}
               </p>
-              <h3 className="mt-1.5 font-display text-[clamp(1.25rem,5.8vw,2rem)] font-bold leading-none tracking-tight text-[color:var(--ink)]">
+              <h3 className="mt-1 font-display text-[clamp(1.05rem,4.8vw,2rem)] font-bold leading-[1.05] tracking-tight text-[color:var(--ink)] sm:mt-1.5">
                 {persona.name}
               </h3>
-              <p className="mt-1 font-body text-[clamp(0.8rem,3vw,0.9rem)] text-[color:var(--ink)]/65">
+              <p className="mt-0.5 font-body text-[clamp(0.75rem,2.8vw,0.9rem)] text-[color:var(--ink)]/65 sm:mt-1">
                 <span className="font-semibold text-[color:var(--ink)]">
                   {persona.role}
                 </span>{" "}
@@ -266,12 +267,12 @@ export function LiveCvCanvas() {
               </p>
             </div>
 
-            {/* AGENT FOUND chips — 6 per persona, 2 rows × 3 (sm+) / 3 rows × 2 (mobile) */}
-            <div className="py-2">
-              <span className="mono-label text-[0.65rem] text-[color:var(--ink)]/40 mb-1.5 block">
+            {/* AGENT FOUND chips — 6 desktop (2×3), 4 mobile (2×2) */}
+            <div className="py-1 sm:py-2">
+              <span className="mono-label mb-1 block text-[0.54rem] tracking-[0.12em] text-[color:var(--ink)]/40 sm:mb-1.5 sm:text-[0.65rem]">
                 AGENT FOUND
               </span>
-              <div className="grid min-h-[4.5rem] grid-cols-2 content-start gap-1.5 sm:grid-cols-3">
+              <div className="grid min-h-[3.25rem] grid-cols-2 content-start gap-1 sm:min-h-[4.5rem] sm:grid-cols-3 sm:gap-1.5">
                 <AnimatePresence mode="popLayout">
                   {persona.keywords.slice(0, revealedKeywords).map((kw, i) => (
                     <motion.div
@@ -284,13 +285,17 @@ export function LiveCvCanvas() {
                         delay: i * 0.04,
                         ease: [0.22, 1, 0.36, 1],
                       }}
-                      className="flex min-w-0 items-center gap-1.5 rounded-full border border-[color:var(--ink)]/10 bg-[color:var(--cream)] px-2.5 py-1.5"
+                      className={cn(
+                        "flex min-w-0 items-center gap-1 rounded-full border border-[color:var(--ink)]/10 bg-[color:var(--cream)] px-2 py-1 sm:gap-1.5 sm:px-2.5 sm:py-1.5",
+                        // Mobile: max 4 chips (ostatnie 2 ukryte)
+                        i >= 4 ? "hidden sm:flex" : "",
+                      )}
                     >
                       <span
                         aria-hidden
-                        className="h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--jade)]"
+                        className="h-1 w-1 shrink-0 rounded-full bg-[color:var(--jade)] sm:h-1.5 sm:w-1.5"
                       />
-                      <span className="truncate font-mono text-[clamp(0.65rem,2.6vw,0.75rem)] font-semibold leading-none text-[color:var(--ink)]">
+                      <span className="truncate font-mono text-[clamp(0.6rem,2.4vw,0.75rem)] font-semibold leading-none text-[color:var(--ink)]">
                         {kw.text}
                       </span>
                     </motion.div>
@@ -300,20 +305,24 @@ export function LiveCvCanvas() {
             </div>
 
             {/* Typed lines */}
-            <div className="flex flex-1 flex-col gap-2.5 text-left">
+            <div className="flex flex-1 flex-col gap-1.5 text-left sm:gap-2.5">
               {typed.filter(Boolean).map((line, i) => (
                 <motion.div
                   key={`${persona.id}-${i}-${line.label}`}
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                  className="flex flex-col gap-0.5"
+                  className={cn(
+                    "flex flex-col gap-0",
+                    // Mobile: max 3 ostatnie typed lines (pierwsze ukrywamy wcześniej dla zwartej wysokości)
+                    i >= 3 ? "hidden sm:flex" : "",
+                  )}
                 >
-                  <span className="mono-label text-[color:var(--ink)]/45">
+                  <span className="mono-label text-[0.52rem] tracking-[0.12em] text-[color:var(--ink)]/45 sm:text-[0.6rem]">
                     {line.label}
                   </span>
                   <span
-                    className={`font-body text-[1.05rem] leading-snug text-[color:var(--ink)] ${
+                    className={`font-body text-[0.88rem] leading-snug text-[color:var(--ink)] sm:text-[1.05rem] ${
                       line.accent ? "font-semibold" : ""
                     }`}
                   >
@@ -357,22 +366,22 @@ export function LiveCvCanvas() {
             </div>
 
             {/* ATS matching bar */}
-            <div className="mt-auto flex flex-col gap-2 border-t border-[color:var(--ink)]/12 pt-4">
+            <div className="mt-auto flex flex-col gap-1.5 border-t border-[color:var(--ink)]/12 pt-2.5 sm:gap-2 sm:pt-4">
               <div className="flex items-center justify-between">
-                <span className="mono-label text-[color:var(--ink)]/55">
-                  ATS MATCH SCORE
+                <span className="mono-label text-[0.52rem] tracking-[0.12em] text-[color:var(--ink)]/55 sm:text-[0.6rem]">
+                  ATS MATCH
                 </span>
                 <motion.span
                   key={`score-${persona.id}`}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: matchVisible ? 1 : 0 }}
                   transition={{ duration: 0.6 }}
-                  className="font-display text-[1.1rem] font-bold tabular-nums text-[color:var(--ink)]"
+                  className="font-display text-[0.95rem] font-bold tabular-nums text-[color:var(--ink)] sm:text-[1.1rem]"
                 >
                   {persona.matchScore}%
                 </motion.span>
               </div>
-              <div className="relative h-1.5 overflow-hidden rounded-full bg-[color:var(--ink)]/10">
+              <div className="relative h-1 overflow-hidden rounded-full bg-[color:var(--ink)]/10 sm:h-1.5">
                 <motion.div
                   key={`bar-${persona.id}`}
                   initial={{ width: "0%" }}
@@ -385,10 +394,10 @@ export function LiveCvCanvas() {
                 />
               </div>
               <div className="flex items-center justify-between">
-                <span className="mono-label text-[color:var(--ink)]/40">
+                <span className="mono-label text-[0.5rem] tracking-[0.12em] text-[color:var(--ink)]/40 sm:text-[0.6rem]">
                   0{personaIdx + 1} / agentcv.pl
                 </span>
-                <span className="mono-label text-[color:var(--ink)]/40">
+                <span className="mono-label text-[0.5rem] tracking-[0.12em] text-[color:var(--ink)]/40 sm:text-[0.6rem]">
                   ATS ✓ · RODO ✓
                 </span>
               </div>
