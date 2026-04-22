@@ -7,7 +7,7 @@ Marka: **agentcv.pl**. Produkt: darmowy kreator CV z asystentem AI dla polskiego
 polskie realia, zero korpo-żargonu, zero fabrykowania metryk.
 
 > Ten plik **nadpisuje** globalny `~/.claude/CLAUDE.md` v6.0 tam, gdzie są różnice
-> (fonty, stack, brak DB/auth/Stripe). Reszta globalnego obowiązuje: 9-fazowy workflow,
+> (fonty, stack). Reszta globalnego obowiązuje: 9-fazowy workflow,
 > 10 quality gates, zakazy globalne, skille, agenci, MCP.
 
 ---
@@ -23,15 +23,26 @@ polskie realia, zero korpo-żargonu, zero fabrykowania metryk.
 - **DnD**: `@dnd-kit/core + sortable + utilities` — tylko w podglądzie CV.
 - **PDF**: `puppeteer-core ^24.40.0` + `@sparticuz/chromium ^147.0.0` (server-only, Node runtime).
 - **DOCX**: `docx ^9.6.1`.
+- **Auth + DB**: `@supabase/supabase-js ^2.48.0` + `@supabase/ssr ^0.7.0`. Service role client
+  w webhooks/admin. Tabele: `cvs`, `newsletter_subscribers`, `admins`, `plan_grants`,
+  `usage_logs`, `emails`, `email_dispatches`. Function `is_admin(uuid)`.
+- **Payments**: `stripe ^22.0.2` + `@stripe/stripe-js ^9.2.0` (TEST mode na start).
+  Checkout: `/api/stripe/checkout`. Webhook: `/api/stripe/webhook` → update
+  `user.app_metadata.plan` + audit w `plan_grants`.
+- **Email**: `resend ^4` + `@react-email/components` + `isomorphic-dompurify`. Nadawca:
+  `Agent CV - Pracuś AI <hej@agentcv.pl>`. Transactional: `src/lib/email/send.ts`
+  (welcome, payment, plan_granted). Inbound: `/api/resend/inbound` (Svix signature) → tabela
+  `emails`. Admin inbox: `/admin/poczta` (wątki + reply).
 - **UI**: shadcn (style `base-nova`, baseColor `neutral`, iconLibrary `lucide`), Base UI `^1.4.0`,
   Phosphor + Lucide + react-icons. Rejestry shadcn: `@magicui`, `@aceternity`, `@motion-primitives`.
 - **Observability**: `@vercel/analytics`, `@vercel/speed-insights`.
 
 ## 2. Czego NIE ma (nie wymyślaj)
 
-Baza danych · autentykacja · Stripe/payments · i18n (hardcoded PL) · Edge runtime ·
-`tailwind.config.*` · `vercel.json` · dynamiczny sitemap (jest statyczny `src/app/sitemap.ts`).
-`/api/newsletter` to **mock** — TODO: Resend/Loops.
+i18n (hardcoded PL) · Edge runtime · `tailwind.config.*` · `vercel.json` ·
+dynamiczny sitemap (jest statyczny `src/app/sitemap.ts`). `/api/newsletter` to **mock** —
+TODO: Resend full integration (obecnie newsletter używa Supabase tabeli, emaile
+transactional i inbox idą przez Resend).
 
 ## 3. Design tokens (SINGLE SOURCE OF TRUTH)
 
@@ -55,13 +66,16 @@ JS first load < 100KB. **`/kreator` jest desktop-first** — mobile out-of-scope
 
 ## 6. Runtime map (endpointy)
 
-| Endpoint | Runtime | maxDuration | Model | Stream |
+| Endpoint | Runtime | maxDuration | Model/Lib | Gating |
 |---|---|---|---|---|
-| `/api/chat` | Node | 30s | `claude-sonnet-4-6` | SSE (UIMessage) |
-| `/api/cv/ai` | Node | 30s | `claude-sonnet-4-6` | text |
-| `/api/pdf` | Node | 60s | Puppeteer | — |
-| `/api/docx` | Node | 30s | `docx` | — |
-| `/api/newsletter` | Node | 10s | mock | — |
+| `/api/chat` | Node | 30s | `claude-sonnet-4-6` | auth + `canUseAI("chat")` |
+| `/api/cv/ai` | Node | 30s | `claude-sonnet-4-6` | auth + `canUseAI("cv")` |
+| `/api/pdf` | Node | 60s | Puppeteer | auth + `canDownload()` |
+| `/api/docx` | Node | 30s | `docx` | auth + `canDownload()` |
+| `/api/newsletter` | Node | 10s | mock (Supabase) | — |
+| `/api/stripe/checkout` | Node | 10s | Stripe SDK | `requireUser()` |
+| `/api/stripe/webhook` | Node | 30s | Stripe SDK | Stripe signature |
+| `/api/resend/inbound` | Node | 10s | — | Svix signature |
 
 Wszystkie: rate-limited przez `src/proxy.ts` (Upstash Redis + global cap + daily cap, fallback
 in-memory w dev) + same-origin check. Szczegóły: **`src/app/api/CLAUDE.md`**.
@@ -116,7 +130,33 @@ npx shadcn@latest add @magicui/<name> | @aceternity/<name> | @motion-primitives/
 - `src/components/kreator/CLAUDE.md` — edytor CV: shell, toolbar, AI inline, Zustand.
 - `src/components/cv/CLAUDE.md` — 5 szablonów, auto-fit, PageA4, print safety.
 
-## 13. Guardrails (projektowe, oprócz globalnych)
+## 13. Admin + Plans + Email
+
+- **Admin role** — hybrid: `ADMIN_EMAILS` env (comma-separated) **OR**
+  `user.app_metadata.role="admin"`. Layout `src/app/admin/layout.tsx` wymusza guard.
+  Przy pierwszym wejściu admina `ensureAdminRole()` seeduje `app_metadata.role` i wpis w
+  `public.admins`. Guard helper: `src/lib/auth/admin.ts` → `isAdminUser()`, `requireAdmin()`.
+- **Plan quotas** — single source of truth w `src/lib/plans/quotas.ts`:
+  - Free: 1 pobranie/mc, 0 AI.
+  - Pro: 10 pobrań/mc, 100 req/dzień chat, 100 req/dzień inline AI, 20 job-match/mc.
+  - Unlimited: ∞ pobrań, 500 req/dzień AI, ∞ job-match.
+- **Usage tracking** — `src/lib/plans/usage.ts` → `canDownload()`, `canUseAI()`,
+  `recordUsage()`. Tabela `usage_logs(user_id, action, created_at)`. Count-based quota z
+  `WHERE created_at >= first_of_month` (brak cron reset).
+- **Plan gating w API** — każdy AI/export endpoint sprawdza plan **przed** wywołaniem modelu
+  i zwraca 402 `plan_limit`/`no_access` z kodem polskim + CTA do `/subskrypcja`.
+- **Stripe TEST** — produkty `agentcv Pro` (19 PLN/mo) i `agentcv Unlimited` (39 PLN/mo).
+  Webhook aktualizuje `app_metadata.plan` + audit log `plan_grants` (source=stripe).
+- **Email (Resend)** — nadawca `Agent CV - Pracuś AI <hej@agentcv.pl>`. Supabase Auth SMTP
+  skonfigurowany na Resend (recovery/confirmation/magic link idą przez ten sam SMTP).
+  Transactional `src/lib/email/send.ts`: `sendWelcome` (idempotentne przez `email_dispatches`
+  unique), `sendPaymentConfirmation`, `sendPlanGranted`.
+- **Inbox** — `/admin/poczta` wątkowe (grupowanie po `thread_id`, matching `in_reply_to`).
+  HTML render w `<iframe sandbox>` + DOMPurify (XSS protection). Reply przez Resend API.
+- **Env vars** — patrz `.env.example`. Krytyczne: `ADMIN_EMAILS`, `STRIPE_*` (6),
+  `RESEND_API_KEY`, `EMAIL_FROM`, `RESEND_INBOUND_WEBHOOK_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`.
+
+## 14. Guardrails (projektowe, oprócz globalnych)
 
 - Nie importuj z `src/types/cv.ts` — użyj `src/lib/cv/schema.ts` (`CVData`, `cvDataSchema`).
 - Nie proponuj 6-tego szablonu CV bez decyzji produktowej.
@@ -126,3 +166,8 @@ npx shadcn@latest add @magicui/<name> | @aceternity/<name> | @motion-primitives/
 - **Nie dodawaj branży do `src/lib/ai/industries.ts` bez pełnego profilu w `src/lib/ai/knowledge-base.ts`**
   (spójność UI dropdown ⇄ Pracuś knowledge base — każda wybieralna branża musi mieć ESCO/skills/ATS).
 - Nie commituj bez jawnej prośby użytkownika.
+- Nie dodawaj funkcji pod AI bez gate'u `canUseAI()` — Free nie ma AI.
+- Nie zwracaj surowego HTML z `public.emails` do JSX bez `<HtmlSandbox>` (XSS).
+- Nie wyłączaj Svix signature verification w `/api/resend/inbound`.
+- Nie usuwaj `force-dynamic` z `/admin/*` — layout używa service_role, nie można prerender.
+- Nie zmieniaj `source` w `plan_grants` insert z `stripe`/`admin`/`system` — RLS + audit polegają.

@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
+import { ArrowRight, ShieldCheck } from "@phosphor-icons/react/dist/ssr";
 import { MarketingShell } from "@/components/landing/_shared/marketing-shell";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { isAdminUser } from "@/lib/auth/admin";
+import { getUserPlan, PLAN_QUOTAS, planLabel } from "@/lib/plans/quotas";
+import { UsageChip } from "@/components/admin/usage-chip";
 import { SignOutButton } from "./sign-out-button";
 
 export const metadata: Metadata = {
@@ -24,8 +27,26 @@ export default async function KontoPage() {
 
   const user = data.user;
   const email = user.email ?? "—";
-  const plan = ((user.app_metadata as { plan?: string } | null)?.plan as string | undefined) ?? "free";
+  const plan = getUserPlan(user);
+  const quota = PLAN_QUOTAS[plan];
   const createdAt = user.created_at ? new Date(user.created_at) : null;
+  const admin = isAdminUser(user);
+
+  // Usage w tym miesiącu (service role — omija RLS żeby mieć count nawet gdy nowy user)
+  const service = createSupabaseServiceClient();
+  const firstOfMonth = new Date();
+  firstOfMonth.setUTCDate(1);
+  firstOfMonth.setUTCHours(0, 0, 0, 0);
+  const { count: downloadsThisMonth } = await service
+    .from("usage_logs")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .in("action", ["pdf", "docx"])
+    .gte("created_at", firstOfMonth.toISOString());
+  const used = downloadsThisMonth ?? 0;
+  const downloadLimit = Number.isFinite(quota.downloadsPerMonth)
+    ? (quota.downloadsPerMonth as number)
+    : ("∞" as const);
 
   return (
     <MarketingShell>
@@ -54,8 +75,14 @@ export default async function KontoPage() {
                 <dd>
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-[color:color-mix(in_oklab,var(--saffron)_22%,transparent)] px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink">
                     <span className="size-1.5 rounded-full bg-[color:var(--saffron)]" aria-hidden />
-                    {plan}
+                    {planLabel(plan)}
                   </span>
+                </dd>
+              </div>
+              <div className="flex items-baseline justify-between gap-4">
+                <dt className="text-[color:var(--ink-muted)]">Pobrania w tym miesiącu</dt>
+                <dd>
+                  <UsageChip plan={plan} used={used} limit={downloadLimit} label="PDF/DOCX" />
                 </dd>
               </div>
               {createdAt ? (
@@ -118,6 +145,36 @@ export default async function KontoPage() {
               <ArrowRight size={16} weight="bold" className="text-[color:var(--ink-muted)] transition-transform group-hover:translate-x-1" />
             </Link>
           </section>
+
+          {admin ? (
+            <section className="mb-10 rounded-2xl border border-[color:var(--saffron)]/40 bg-[color:var(--saffron)]/10 p-5">
+              <div className="flex items-start gap-3">
+                <ShieldCheck
+                  size={20}
+                  weight="fill"
+                  className="mt-0.5 shrink-0 text-[color:var(--saffron)]"
+                />
+                <div className="flex-1">
+                  <p className="mono-label text-[0.56rem] text-[color:var(--ink-muted)]">
+                    Admin
+                  </p>
+                  <p className="font-display text-[15px] font-semibold tracking-tight">
+                    Panel administracyjny
+                  </p>
+                  <p className="mt-0.5 text-[12.5px] text-[color:var(--ink-soft)]">
+                    Zarządzanie kontami, planami i skrzynką hej@agentcv.pl
+                  </p>
+                </div>
+                <Link
+                  href="/admin"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-[13px] font-semibold text-cream transition-opacity hover:opacity-95"
+                >
+                  Otwórz
+                  <ArrowRight size={12} weight="bold" />
+                </Link>
+              </div>
+            </section>
+          ) : null}
 
           <SignOutButton />
         </div>

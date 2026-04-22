@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "@phosphor-icons/react/dist/ssr";
 import { LoginButtons } from "@/components/auth/login-buttons";
+import { ForgotPasswordLink } from "@/components/auth/forgot-password-link";
 import { PracusBrandImage } from "@/components/landing/_shared/pracus-brand";
 
 export const metadata: Metadata = {
@@ -50,6 +51,10 @@ export default async function ZalogujPage({ searchParams }: { searchParams: Sear
           ) : null}
 
           <LoginButtons redirectTo={next && next.startsWith("/") ? next : "/konto"} />
+
+          <div className="text-center">
+            <ForgotPasswordLink />
+          </div>
         </section>
 
         <footer className="flex flex-col gap-2 text-center">

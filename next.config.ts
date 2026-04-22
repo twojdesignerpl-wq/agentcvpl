@@ -10,9 +10,9 @@ const csp = [
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' data: https://fonts.gstatic.com",
   "img-src 'self' data: blob: https://i.pravatar.cc",
-  // connect: Vercel insights + Supabase (dynamicznie z env) + Stripe.
+  // connect: Vercel insights + Supabase (dynamicznie z env) + Stripe + Resend.
   // Anthropic dzieje się server-side.
-  `connect-src 'self' https://va.vercel-scripts.com https://vitals.vercel-insights.com https://api.stripe.com${
+  `connect-src 'self' https://va.vercel-scripts.com https://vitals.vercel-insights.com https://api.stripe.com https://api.resend.com${
     process.env.NEXT_PUBLIC_SUPABASE_URL
       ? ` ${process.env.NEXT_PUBLIC_SUPABASE_URL} ${process.env.NEXT_PUBLIC_SUPABASE_URL.replace("https://", "wss://")}`
       : ""

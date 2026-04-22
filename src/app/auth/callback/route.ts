@@ -33,8 +33,31 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         `${origin}/zaloguj?error=${encodeURIComponent(error.message)}`,
       );
     }
+
+    // Welcome email dla nowych userów (created < 5 min temu). Fire-and-forget,
+    // nie blokuj redirectu jeśli Resend padnie.
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData.user?.email) {
+        const createdAgo = Date.now() - new Date(userData.user.created_at).getTime();
+        if (createdAgo < 5 * 60_000) {
+          const metaName = (userData.user.user_metadata as { name?: string; full_name?: string } | null)
+            ?.full_name ?? (userData.user.user_metadata as { name?: string } | null)?.name;
+          void import("@/lib/email/send")
+            .then((m) =>
+              m.sendWelcome({
+                id: userData.user!.id,
+                email: userData.user!.email!,
+                name: metaName,
+              }),
+            )
+            .catch((err) => console.error("[welcome email]", err));
+        }
+      }
+    } catch (err) {
+      console.error("[welcome email trigger]", err);
+    }
   } catch (e) {
-    // Supabase env vars missing — przekieruj z informacją dla dev
     return NextResponse.redirect(
       `${origin}/zaloguj?error=${encodeURIComponent((e as Error).message)}`,
     );

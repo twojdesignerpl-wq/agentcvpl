@@ -3,7 +3,11 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { BASE_PERSONA, buildSystemPrompt } from "@/lib/ai/prompts";
 import { pracusTools } from "@/lib/ai/tools";
 import { compressHistory, SUMMARIZE_THRESHOLD } from "@/lib/ai/summarize";
+import { requireUser } from "@/lib/auth/guard";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { canUseAI, planLimitResponse, recordUsage } from "@/lib/plans/usage";
 import type { AIContext } from "@/types/ai";
+import type { User } from "@supabase/supabase-js";
 import { z } from "zod";
 
 export const maxDuration = 30;
@@ -41,6 +45,18 @@ const uiMessageSchema = z.object({
 const messagesSchema = z.array(uiMessageSchema).min(1).max(MAX_MESSAGES);
 
 export async function POST(request: Request): Promise<Response> {
+  // Auth + plan gating — Pracuś chat AI jest dostępny tylko dla Pro i Unlimited.
+  // W dev bez Supabase działa jak przedtem (anon dozwolony).
+  let authUser: User | null = null;
+  if (isSupabaseConfigured()) {
+    const guard = await requireUser();
+    if (!guard.ok) return guard.response;
+    authUser = guard.user;
+
+    const aiCheck = await canUseAI(authUser, "chat");
+    if (!aiCheck.ok) return planLimitResponse(aiCheck);
+  }
+
   let body: unknown;
   try {
     body = await request.json();
@@ -117,6 +133,14 @@ export async function POST(request: Request): Promise<Response> {
   // Tools: tylko w trybie "chat". Inne tryby (generate/improve/job-match) są
   // pojedyncze-zapytania, bez tool-calling.
   const enableTools = aiContext.action === "chat";
+
+  // Record usage PRZED streamText (fire-and-forget) — quota dziennego cap oparta o request count.
+  if (authUser) {
+    const isJobMatch = aiContext.action === "job-match";
+    void recordUsage(authUser.id, isJobMatch ? "job_match" : "ai_chat", {
+      action: aiContext.action,
+    });
+  }
 
   const result = streamText({
     model: anthropic("claude-sonnet-4-6"),

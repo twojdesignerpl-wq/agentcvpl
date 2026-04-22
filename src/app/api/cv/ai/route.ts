@@ -2,6 +2,10 @@ import { streamText } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { z } from "zod";
 import { sanitizeUserInput } from "@/lib/ai/prompts";
+import { requireUser } from "@/lib/auth/guard";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { canUseAI, planLimitResponse, recordUsage } from "@/lib/plans/usage";
+import type { User } from "@supabase/supabase-js";
 
 export const maxDuration = 30;
 export const runtime = "nodejs";
@@ -71,6 +75,17 @@ ${context}
 }
 
 export async function POST(request: Request): Promise<Response> {
+  // Auth + plan gating — inline AI (generate/improve/shorten) jest Pro+ only.
+  let authUser: User | null = null;
+  if (isSupabaseConfigured()) {
+    const guard = await requireUser();
+    if (!guard.ok) return guard.response;
+    authUser = guard.user;
+
+    const aiCheck = await canUseAI(authUser, "cv");
+    if (!aiCheck.ok) return planLimitResponse(aiCheck);
+  }
+
   let body: unknown;
   try {
     body = await request.json();
@@ -90,6 +105,13 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const prompt = buildPrompt(parsed.data);
+
+  if (authUser) {
+    void recordUsage(authUser.id, "ai_cv", {
+      action: parsed.data.action,
+      field: parsed.data.field,
+    });
+  }
 
   const result = streamText({
     model: anthropic("claude-sonnet-4-6"),

@@ -2,7 +2,9 @@ import { cvDataSchema } from "@/lib/cv/schema";
 import { renderCVToDocx } from "@/lib/cv/render-docx";
 import { requireUser } from "@/lib/auth/guard";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { canDownload, planLimitResponse, recordUsage } from "@/lib/plans/usage";
 import { z } from "zod";
+import type { User } from "@supabase/supabase-js";
 
 export const maxDuration = 30;
 export const runtime = "nodejs";
@@ -12,9 +14,14 @@ const requestSchema = z.object({
 });
 
 export async function POST(request: Request): Promise<Response> {
+  let authUser: User | null = null;
   if (isSupabaseConfigured()) {
     const guard = await requireUser();
     if (!guard.ok) return guard.response;
+    authUser = guard.user;
+
+    const check = await canDownload(authUser);
+    if (!check.ok) return planLimitResponse(check);
   }
 
   let body: unknown;
@@ -37,6 +44,11 @@ export async function POST(request: Request): Promise<Response> {
 
   try {
     const buffer = await renderCVToDocx(parsed.data.cvData);
+
+    if (authUser) {
+      void recordUsage(authUser.id, "docx", { bytes: buffer.length });
+    }
+
     const fileName =
       [parsed.data.cvData.personal.firstName, parsed.data.cvData.personal.lastName]
         .filter(Boolean)

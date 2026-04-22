@@ -11,6 +11,7 @@ const LIMITS: Record<string, number> = {
   "/api/newsletter": 5,
   "/api/fetch-job": 5,
   "/api/og": 60,
+  "/api/resend/inbound": 60, // Resend webhook — 1 email/s peak
 };
 
 // Global cap w oknie 60s (killswitch — chroni przed rozproszonym atakiem na endpoint AI)
@@ -21,6 +22,7 @@ const GLOBAL_LIMITS: Record<string, number> = {
   "/api/docx": 500,
   "/api/fetch-job": 200,
   "/api/og": 2000,
+  "/api/resend/inbound": 600, // Sumaryczny killswitch dla inbound emails
 };
 
 // Daily cap per-IP (24h) — anti-abuse dla drogich modeli AI

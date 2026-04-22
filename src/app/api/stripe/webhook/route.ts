@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { getStripeServer } from "@/lib/stripe/server";
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
+import { sendPaymentConfirmation } from "@/lib/email/send";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -43,7 +44,27 @@ export async function POST(request: Request): Promise<Response> {
         const customerId =
           typeof session.customer === "string" ? session.customer : session.customer?.id;
         if (userId && plan) {
-          await updateUserPlan(userId, plan, customerId);
+          await updateUserPlan(userId, plan, customerId, "Stripe checkout.session.completed");
+
+          // Wyślij potwierdzenie płatności — fire-and-forget, nie psuj webhoku jeśli email padnie
+          if (plan === "pro" || plan === "unlimited") {
+            try {
+              const admin = createSupabaseServiceClient();
+              const { data: userData } = await admin.auth.admin.getUserById(userId);
+              if (userData.user?.email) {
+                const amountMinor = session.amount_total ?? 0;
+                const currency = (session.currency ?? "pln").toUpperCase();
+                const amount = `${(amountMinor / 100).toFixed(2)} ${currency}`;
+                void sendPaymentConfirmation(
+                  { id: userId, email: userData.user.email },
+                  plan,
+                  amount,
+                );
+              }
+            } catch (err) {
+              console.error("[stripe:webhook] payment email send failed:", err);
+            }
+          }
         }
         break;
       }
@@ -54,7 +75,12 @@ export async function POST(request: Request): Promise<Response> {
         const status = sub.status;
         const effective = status === "active" || status === "trialing" ? plan : "free";
         if (userId && effective) {
-          await updateUserPlan(userId, effective);
+          await updateUserPlan(
+            userId,
+            effective,
+            undefined,
+            `Stripe subscription.updated (status=${status})`,
+          );
         }
         break;
       }
@@ -62,7 +88,7 @@ export async function POST(request: Request): Promise<Response> {
         const sub = event.data.object as Stripe.Subscription;
         const userId = sub.metadata?.user_id;
         if (userId) {
-          await updateUserPlan(userId, "free");
+          await updateUserPlan(userId, "free", undefined, "Stripe subscription.deleted");
         }
         break;
       }
@@ -82,13 +108,38 @@ async function updateUserPlan(
   userId: string,
   plan: string,
   stripeCustomerId?: string,
+  reason?: string,
 ): Promise<void> {
   const admin = createSupabaseServiceClient();
-  const appMetadata: Record<string, unknown> = { plan };
+
+  // Fetch current plan (dla from_plan audit)
+  const { data: before } = await admin.auth.admin.getUserById(userId);
+  const fromPlan = (before.user?.app_metadata as { plan?: string } | null)?.plan ?? null;
+  const email = before.user?.email ?? "";
+
+  const existingMeta = (before.user?.app_metadata ?? {}) as Record<string, unknown>;
+  const appMetadata: Record<string, unknown> = { ...existingMeta, plan };
   if (stripeCustomerId) appMetadata.stripe_customer_id = stripeCustomerId;
 
   const { error } = await admin.auth.admin.updateUserById(userId, {
     app_metadata: appMetadata,
   });
   if (error) throw error;
+
+  // Audit log — nie psuj webhoku jeśli insert się buntuje
+  if (fromPlan !== plan) {
+    try {
+      await admin.from("plan_grants").insert({
+        user_id: userId,
+        email,
+        from_plan: fromPlan,
+        to_plan: plan,
+        reason: reason ?? "Stripe event",
+        source: "stripe",
+        granted_by: null,
+      });
+    } catch (err) {
+      console.error("[stripe:webhook] plan_grants insert failed:", err);
+    }
+  }
 }

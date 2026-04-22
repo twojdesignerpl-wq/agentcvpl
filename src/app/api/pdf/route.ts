@@ -2,7 +2,9 @@ import { cvDataSchema } from "@/lib/cv/schema";
 import { renderCVToHTML } from "@/lib/cv/render-html";
 import { requireUser } from "@/lib/auth/guard";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { canDownload, planLimitResponse, recordUsage } from "@/lib/plans/usage";
 import { z } from "zod";
+import type { User } from "@supabase/supabase-js";
 
 export const maxDuration = 60;
 export const runtime = "nodejs";
@@ -82,9 +84,15 @@ async function getBrowser() {
 export async function POST(request: Request): Promise<Response> {
   // Auth gate — pobranie PDF wymaga zalogowanego użytkownika gdy Supabase jest skonfigurowany.
   // W dev bez Supabase (anon-only) działa jak przedtem.
+  let authUser: User | null = null;
   if (isSupabaseConfigured()) {
     const guard = await requireUser();
     if (!guard.ok) return guard.response;
+    authUser = guard.user;
+
+    // Plan gating — sprawdzenie limitu pobrań per-plan (Free:1, Pro:10, Unlimited:∞)
+    const check = await canDownload(authUser);
+    if (!check.ok) return planLimitResponse(check);
   }
 
   let body: unknown;
@@ -153,6 +161,11 @@ export async function POST(request: Request): Promise<Response> {
         JSON.stringify({ error: "PDF wynikowy przekracza limit rozmiaru" }),
         { status: 413, headers: { "Content-Type": "application/json" } },
       );
+    }
+
+    // Zapisz usage do audit (async, nie blokuj response)
+    if (authUser) {
+      void recordUsage(authUser.id, "pdf", { bytes: pdf.length });
     }
 
     const fileName =
