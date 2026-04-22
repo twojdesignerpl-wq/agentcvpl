@@ -110,17 +110,17 @@ export function HeroSection() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1.2, delay: 1.2 }}
-            className="mt-12 grid max-w-xl grid-cols-2 gap-x-5 gap-y-5 border-t border-[color:var(--ink)]/12 pt-6 sm:mt-14 sm:gap-x-8 sm:gap-y-6 sm:grid-cols-4"
+            className="mt-12 grid max-w-xl grid-cols-2 gap-x-4 gap-y-5 border-t border-[color:var(--ink)]/12 pt-6 sm:mt-14 sm:grid-cols-4 sm:gap-x-6 sm:gap-y-6 md:gap-x-8"
           >
             {hero.stats.map((s) => (
               <div
                 key={s.label}
-                className="flex flex-col gap-1.5 sm:gap-2"
+                className="flex min-w-0 flex-col gap-1.5 sm:gap-2"
               >
-                <dt className="mono-label truncate text-[0.58rem] text-[color:var(--ink)]/50 sm:whitespace-nowrap sm:text-[0.75rem]">
+                <dt className="mono-label whitespace-normal text-[clamp(0.6rem,2.6vw,0.75rem)] leading-snug text-[color:var(--ink)]/50">
                   {s.label}
                 </dt>
-                <dd className="font-display text-[1.25rem] font-bold leading-none tracking-tight text-[color:var(--ink)] tabular-nums sm:whitespace-nowrap sm:text-[1.5rem]">
+                <dd className="font-display text-[clamp(1.1rem,4.8vw,1.5rem)] font-bold leading-none tracking-tight text-[color:var(--ink)] tabular-nums">
                   {s.value}
                 </dd>
               </div>

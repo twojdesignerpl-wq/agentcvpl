@@ -716,6 +716,19 @@
   --safe-right: env(safe-area-inset-right, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
+
+  /* Mobile chrome heights */
+  --nav-h: 4rem;              /* landing navbar */
+  --mobile-top-h: 3rem;       /* kreator mobile top-bar */
+  --bottom-nav-h: 4rem;       /* kreator mobile bottom-nav */
+
+  /* Fluid typography scale — use w mobile chrome i formach */
+  --fs-xs: clamp(0.72rem, 2.6vw, 0.78rem);
+  --fs-sm: clamp(0.82rem, 3vw, 0.9rem);
+  --fs-base: clamp(0.95rem, 3.6vw, 1.05rem);
+  --fs-lg: clamp(1.1rem, 4.5vw, 1.35rem);
+  --fs-xl: clamp(1.4rem, 6vw, 2rem);
+  --fs-display: clamp(1.75rem, 8vw, 3rem);
 }
 
 .safe-top { padding-top: env(safe-area-inset-top, 0px); }

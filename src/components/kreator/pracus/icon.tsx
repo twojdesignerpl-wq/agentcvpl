@@ -5,9 +5,10 @@ import { motion, useReducedMotion } from "motion/react";
 type Props = {
   size?: number;
   online?: boolean;
-  /** "compact" = sama głowa robota (default, do avatarów i headerów).
+  /** "mini" = uproszczony (<24px), głowa + 1 gogle bez bridge, bez anteny/pióra.
+   *  "compact" = sama głowa robota (default, do avatarów i headerów).
    *  "full" = głowa + pióro + pergamin (do WelcomeCard, splash). */
-  variant?: "compact" | "full";
+  variant?: "mini" | "compact" | "full";
   className?: string;
 };
 
@@ -28,6 +29,41 @@ export function PracusMark({
   className,
 }: Props) {
   const reduced = useReducedMotion();
+
+  // Mini variant — prosty, czytelny <24px (navigation, FAB mini badge).
+  if (variant === "mini") {
+    return (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        width={size}
+        height={size}
+        className={className}
+        role="img"
+        aria-label="Pracuś AI"
+      >
+        {/* Głowa — zaokrąglony prostokąt ink kontur na cream tle */}
+        <rect
+          x="3.2"
+          y="4.4"
+          width="17.6"
+          height="14.4"
+          rx="5.2"
+          fill="var(--cream)"
+          stroke="var(--ink)"
+          strokeWidth="1.6"
+        />
+        {/* Antena — pojedyncza kropka na czubku */}
+        <circle cx="12" cy="3.2" r="1.2" fill="var(--saffron)" stroke="var(--ink)" strokeWidth="0.8" />
+        {/* Jedno oko/gogle saffron centrowane — czytelne nawet w 16px */}
+        <circle cx="12" cy="11.6" r="3.4" fill="var(--saffron)" stroke="var(--ink)" strokeWidth="1.2" />
+        <circle cx="12" cy="11.6" r="1.2" fill="var(--ink)" />
+        {online ? (
+          <circle cx="19.6" cy="19.2" r="2" fill="var(--saffron)" stroke="var(--ink)" strokeWidth="1" />
+        ) : null}
+      </svg>
+    );
+  }
 
   return (
     <svg

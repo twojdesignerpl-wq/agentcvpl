@@ -101,13 +101,13 @@ function formatSnippet(s: string | undefined | null, max = 220): string {
 function Diff({ before, after }: { before?: string | null; after: string }) {
   const hasBefore = Boolean(before && before.trim());
   return (
-    <div className="flex flex-col gap-1.5 text-[12.5px] leading-relaxed">
+    <div className="flex min-w-0 flex-col gap-1.5 text-[12.5px] leading-relaxed">
       {hasBefore ? (
         <details className="rounded-lg border border-ink/8 bg-[color-mix(in_oklab,var(--cream)_94%,black_2%)] text-[11.5px]">
           <summary className="cursor-pointer select-none px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-ink-muted hover:text-ink">
             Pokaż obecny tekst
           </summary>
-          <div className="text-ink-soft whitespace-pre-wrap px-2.5 pb-2">
+          <div className="max-h-[40vh] overflow-y-auto whitespace-pre-wrap break-words px-2.5 pb-2 text-ink-soft">
             {formatSnippet(before, 180)}
           </div>
         </details>
@@ -116,7 +116,9 @@ function Diff({ before, after }: { before?: string | null; after: string }) {
         <div className="text-[10px] font-semibold uppercase tracking-wider text-[color:var(--rust)] mb-1">
           Propozycja
         </div>
-        <div className="text-ink whitespace-pre-wrap">{formatSnippet(after, 500)}</div>
+        <div className="max-h-[50vh] overflow-y-auto whitespace-pre-wrap break-words text-ink">
+          {formatSnippet(after, 500)}
+        </div>
       </div>
     </div>
   );

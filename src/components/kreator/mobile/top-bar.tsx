@@ -7,10 +7,17 @@ import { cn } from "@/lib/utils";
 type Props = {
   onPreview: () => void;
   autoSaveLabel?: string;
+  /** Gdy true — treść przekracza A4, wyświetl ostrzegawczą kropkę saffron. */
+  overflowed?: boolean;
   className?: string;
 };
 
-export function MobileTopBar({ onPreview, autoSaveLabel = "Zapisano", className }: Props) {
+export function MobileTopBar({
+  onPreview,
+  autoSaveLabel = "Zapisano",
+  overflowed = false,
+  className,
+}: Props) {
   return (
     <header
       className={cn(
@@ -18,6 +25,7 @@ export function MobileTopBar({ onPreview, autoSaveLabel = "Zapisano", className 
         className,
       )}
       role="banner"
+      style={{ minHeight: "var(--mobile-top-h, 3rem)" }}
     >
       <div className="flex h-12 items-center justify-between px-4">
         <Link
@@ -36,11 +44,24 @@ export function MobileTopBar({ onPreview, autoSaveLabel = "Zapisano", className 
         </Link>
 
         <div className="flex items-center gap-2">
+          {/* Autosave indicator — zawsze widoczna kropka + etykieta tylko na >=sm */}
           <span
-            className="mono-label hidden text-[0.58rem] text-[color:var(--ink)]/55 sm:inline"
+            className="inline-flex items-center gap-1.5"
             aria-live="polite"
+            aria-label={autoSaveLabel}
           >
-            {autoSaveLabel}
+            <span
+              aria-hidden
+              className={cn(
+                "inline-block h-2 w-2 rounded-full transition-colors",
+                overflowed
+                  ? "bg-[color:var(--saffron)]"
+                  : "bg-[color:var(--jade)]",
+              )}
+            />
+            <span className="mono-label hidden text-[0.58rem] text-[color:var(--ink)]/55 sm:inline">
+              {autoSaveLabel}
+            </span>
           </span>
           <button
             type="button"

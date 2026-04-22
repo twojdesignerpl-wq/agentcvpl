@@ -51,3 +51,5 @@ next-env.d.ts
 
 # legacy refs
 /pdf szablony cv/
+
+.vercel

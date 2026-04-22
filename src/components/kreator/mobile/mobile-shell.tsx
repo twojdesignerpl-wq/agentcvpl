@@ -19,6 +19,8 @@ import { MobileTabStyle } from "./tab-style";
 import { MobileTabAI } from "./tab-ai";
 import { MobileTabExport } from "./tab-export";
 import { MobilePreviewModal } from "./preview-modal";
+import { PracusFab } from "./pracus-fab";
+import { PracusQuickSheet } from "./pracus-quick-sheet";
 import { RequireLoginModal } from "@/components/auth/require-login-modal";
 import { track } from "@/lib/analytics/track";
 
@@ -39,6 +41,7 @@ export function MobileKreatorShell() {
 
   const [activeTab, setActiveTab] = useState<MobileTab>("editor");
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [pracusOpen, setPracusOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const [needsLogin, setNeedsLogin] = useState(false);
@@ -136,6 +139,7 @@ export function MobileKreatorShell() {
     <div className="flex min-h-[100dvh] flex-col bg-cream text-ink">
       <MobileTopBar
         onPreview={openPreview}
+        overflowed={overflowed}
         autoSaveLabel={overflowed ? "Sprawdź treść" : "Zapisano"}
       />
 
@@ -161,6 +165,13 @@ export function MobileKreatorShell() {
       </main>
 
       <MobileBottomNav active={activeTab} onChange={setActiveTab} />
+
+      {/* Pracuś FAB — widoczny tylko w editor/style, nie w Pracuś tab ani Pobierz */}
+      {activeTab === "editor" || activeTab === "style" ? (
+        <PracusFab onOpen={() => setPracusOpen(true)} />
+      ) : null}
+
+      <PracusQuickSheet open={pracusOpen} onClose={() => setPracusOpen(false)} />
 
       <RequireLoginModal
         open={needsLogin}

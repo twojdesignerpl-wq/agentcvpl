@@ -190,7 +190,11 @@ function DesktopKreatorShell() {
   const canvas = (
     <div
       ref={canvasRef}
-      className="flex-1 min-w-0 max-w-[1100px] overflow-auto"
+      className={
+        showAiPanel
+          ? "flex-1 min-w-0 max-w-[1100px] overflow-auto"
+          : "flex-1 min-w-0 overflow-auto"
+      }
     >
       <div className="min-h-full flex items-center justify-center px-6 py-8">
         <div
@@ -268,7 +272,9 @@ function DesktopKreatorShell() {
             <PracusPanel />
           </div>
         ) : (
-          canvas
+          <div className="flex-1 w-full flex items-stretch justify-center overflow-hidden min-h-0">
+            {canvas}
+          </div>
         )}
       </div>
 

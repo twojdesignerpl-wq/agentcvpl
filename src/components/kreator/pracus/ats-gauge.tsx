@@ -61,7 +61,7 @@ export function AtsGauge({ onAskPracus }: { onAskPracus: (prompt: string) => voi
               transition={{ type: "spring", stiffness: 320, damping: 28 }}
               role="dialog"
               aria-label="Analiza ATS"
-              className="absolute right-4 top-[88px] z-50 w-[420px] max-h-[720px] overflow-hidden rounded-3xl border border-ink/10 bg-cream-soft shadow-[0_32px_80px_-32px_rgba(10,14,26,0.45)] flex flex-col"
+              className="absolute right-4 left-4 top-[88px] z-50 flex max-h-[min(720px,85dvh)] w-auto max-w-[min(420px,calc(100vw-2rem))] flex-col overflow-hidden overflow-y-auto rounded-3xl border border-ink/10 bg-cream-soft shadow-[0_32px_80px_-32px_rgba(10,14,26,0.45)] sm:left-auto"
             >
               <header className="flex items-center justify-between px-5 py-4 border-b border-ink/8 bg-gradient-to-br from-cream-soft to-cream">
                 <div className="flex items-center gap-3">

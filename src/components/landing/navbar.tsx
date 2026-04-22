@@ -87,10 +87,10 @@ export function Navbar() {
           initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -12 }}
-          className="lg:hidden fixed inset-0 top-16 bg-[color:var(--cream)] grain"
+          className="lg:hidden fixed inset-0 top-[var(--nav-h,4rem)] bg-[color:var(--cream)] grain"
         >
-          <div className="relative flex h-[calc(100dvh-4rem)] flex-col justify-between px-6 py-10">
-            <nav className="flex flex-col gap-6">
+          <div className="relative flex h-[calc(100dvh-var(--nav-h,4rem))] flex-col justify-between px-5 pt-8 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-10">
+            <nav className="flex flex-col gap-3 sm:gap-5 md:gap-6">
               {BRAND.nav.map((item, i) => (
                 <motion.div
                   key={item.href}
@@ -101,14 +101,14 @@ export function Navbar() {
                   <Link
                     href={item.href}
                     onClick={() => setOpen(false)}
-                    className="font-display text-[2.5rem] font-semibold tracking-tight text-[color:var(--ink)]"
+                    className="font-display text-[clamp(1.75rem,8vw,2.5rem)] font-semibold leading-[1.05] tracking-tight text-[color:var(--ink)]"
                   >
                     {item.label}
                   </Link>
                 </motion.div>
               ))}
             </nav>
-            <div className="flex flex-col gap-4 pb-8">
+            <div className="flex flex-col gap-3 pt-6 sm:gap-4">
               <MagneticButton href="/kreator" variant="ink" size="lg" className="w-full">
                 Stwórz CV za darmo →
               </MagneticButton>

@@ -33,6 +33,7 @@ import { AnimatedPopover } from "./animated-popover";
 import { SectionsPopover } from "./sections-popover";
 import { ZoomControl } from "./zoom-control";
 import { SaveToAccountButton } from "./save-to-account";
+import { AccountMenuPill } from "./account-menu-pill";
 import { MenuSelect, type MenuOption } from "@/components/ui/menu-select";
 
 const FONT_FAMILY_OPTIONS: ReadonlyArray<MenuOption<FontFamilyId>> = [
@@ -578,6 +579,7 @@ export function Toolbar({
         {/* Right — gear + download */}
         <div className="flex shrink-0 items-center gap-2">
           <SaveToAccountButton effectiveFontSize={effectiveFontSize} compact />
+          <AccountMenuPill />
 
           <div ref={settingsRef} className="relative">
             <button

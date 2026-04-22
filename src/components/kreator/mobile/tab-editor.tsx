@@ -19,6 +19,7 @@ import {
 } from "@phosphor-icons/react/dist/ssr";
 import { useCVStore } from "@/lib/cv/store";
 import { MobileSectionAccordion } from "./forms/section-accordion";
+import { SectionJumpBar } from "./section-jump-bar";
 import { MobilePersonalForm } from "./forms/personal-form";
 import { MobileProfileForm } from "./forms/profile-form";
 import { MobileEmploymentForm } from "./forms/employment-form";
@@ -66,7 +67,7 @@ export function MobileTabEditor() {
   const toggleReferences = useCVStore((s) => s.toggleReferences);
 
   return (
-    <div className="space-y-3 px-4 pb-24 pt-3">
+    <div className="px-4 pb-24 pt-3">
       <div className="flex items-baseline justify-between px-1 pb-1">
         <h1 className="font-display text-[1.35rem] font-semibold tracking-tight text-ink">
           Twoje CV
@@ -75,6 +76,10 @@ export function MobileTabEditor() {
           Autosave
         </span>
       </div>
+
+      <SectionJumpBar />
+
+      <div className="mt-3 space-y-3">
 
       <MobileSectionAccordion id="personal" title="Dane osobowe" icon={User} defaultOpen>
         <MobilePersonalForm />
@@ -233,6 +238,7 @@ export function MobileTabEditor() {
       <MobileSectionAccordion id="custom" title="Własne sekcje" icon={Stack} count={customCount}>
         <MobileCustomSectionsForm />
       </MobileSectionAccordion>
+      </div>
     </div>
   );
 }

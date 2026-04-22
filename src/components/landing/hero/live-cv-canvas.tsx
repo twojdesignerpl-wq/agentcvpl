@@ -223,10 +223,10 @@ export function LiveCvCanvas() {
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6, duration: 0.8 }}
-        className="absolute -top-4 left-6 z-20 flex items-center gap-2 rounded-full border border-[color:var(--ink)]/15 bg-[color:var(--cream)] px-4 py-2 shadow-[0_16px_32px_-20px_rgba(10,14,26,0.4)]"
+        className="absolute -top-3 left-4 z-20 flex max-w-[calc(100%-2rem)] items-center gap-2 rounded-full border border-[color:var(--ink)]/15 bg-[color:var(--cream)] px-3 py-1.5 shadow-[0_16px_32px_-20px_rgba(10,14,26,0.4)] sm:-top-4 sm:left-6 sm:px-4 sm:py-2"
       >
         <span className="agent-dot" />
-        <span className="mono-label text-[color:var(--ink)]">
+        <span className="mono-label truncate text-[color:var(--ink)]">
           {STATUS_MESSAGES[statusIdx]}
         </span>
       </motion.div>
@@ -235,7 +235,7 @@ export function LiveCvCanvas() {
       <motion.div
         ref={canvasRef}
         style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-        className="relative aspect-[1/1.1] w-full overflow-hidden rounded-[2px] bg-[color:var(--cream-soft)] ring-ink grain"
+        className="relative aspect-[1/1.05] w-full overflow-hidden rounded-[2px] bg-[color:var(--cream-soft)] ring-ink grain sm:aspect-[1/1.1]"
       >
         {/* Paper header ink stripe */}
         <div className="absolute left-0 right-0 top-0 h-1.5 bg-[color:var(--ink)]" />
@@ -248,17 +248,17 @@ export function LiveCvCanvas() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -14 }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            className="relative flex h-full flex-col gap-3 px-7 pb-6 pt-10 sm:px-9 sm:pt-12"
+            className="relative flex h-full flex-col gap-3 px-5 pb-5 pt-9 sm:px-9 sm:pt-12"
           >
             {/* Nameplate */}
             <div className="border-b border-[color:var(--ink)]/12 pb-3">
               <p className="mono-label text-[color:var(--ink)]/50">
                 CV · PRACUŚ · {persona.company.toUpperCase()}
               </p>
-              <h3 className="mt-1.5 font-display text-[clamp(1.4rem,3.2vw,2rem)] font-bold leading-none tracking-tight text-[color:var(--ink)]">
+              <h3 className="mt-1.5 font-display text-[clamp(1.25rem,5.8vw,2rem)] font-bold leading-none tracking-tight text-[color:var(--ink)]">
                 {persona.name}
               </h3>
-              <p className="mt-1 font-body text-[0.88rem] text-[color:var(--ink)]/65">
+              <p className="mt-1 font-body text-[clamp(0.8rem,3vw,0.9rem)] text-[color:var(--ink)]/65">
                 <span className="font-semibold text-[color:var(--ink)]">
                   {persona.role}
                 </span>{" "}
@@ -266,12 +266,12 @@ export function LiveCvCanvas() {
               </p>
             </div>
 
-            {/* AGENT FOUND chips — 6 per persona, 2 rows × 3, fixed height so content below never shifts */}
+            {/* AGENT FOUND chips — 6 per persona, 2 rows × 3 (sm+) / 3 rows × 2 (mobile) */}
             <div className="py-2">
               <span className="mono-label text-[0.65rem] text-[color:var(--ink)]/40 mb-1.5 block">
                 AGENT FOUND
               </span>
-              <div className="grid min-h-[4.5rem] grid-cols-3 content-start gap-1.5">
+              <div className="grid min-h-[4.5rem] grid-cols-2 content-start gap-1.5 sm:grid-cols-3">
                 <AnimatePresence mode="popLayout">
                   {persona.keywords.slice(0, revealedKeywords).map((kw, i) => (
                     <motion.div
@@ -284,13 +284,13 @@ export function LiveCvCanvas() {
                         delay: i * 0.04,
                         ease: [0.22, 1, 0.36, 1],
                       }}
-                      className="flex items-center gap-1.5 rounded-full border border-[color:var(--ink)]/10 bg-[color:var(--cream)] px-3 py-1.5"
+                      className="flex min-w-0 items-center gap-1.5 rounded-full border border-[color:var(--ink)]/10 bg-[color:var(--cream)] px-2.5 py-1.5"
                     >
                       <span
                         aria-hidden
                         className="h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--jade)]"
                       />
-                      <span className="font-mono text-[0.72rem] font-semibold leading-none text-[color:var(--ink)]">
+                      <span className="truncate font-mono text-[clamp(0.65rem,2.6vw,0.75rem)] font-semibold leading-none text-[color:var(--ink)]">
                         {kw.text}
                       </span>
                     </motion.div>

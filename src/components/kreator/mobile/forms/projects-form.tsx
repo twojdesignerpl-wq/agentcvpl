@@ -2,7 +2,8 @@
 
 import { Plus } from "@phosphor-icons/react/dist/ssr";
 import { useCVStore } from "@/lib/cv/store";
-import { MobileTextField, MobileTextarea } from "./mobile-field";
+import { MobileTextField } from "./mobile-field";
+import { MobileAITextarea } from "./mobile-ai-textarea";
 import { MobileArrayCardHeader } from "./array-card-header";
 
 export function MobileProjectsForm() {
@@ -58,12 +59,14 @@ export function MobileProjectsForm() {
               onChange={(e) => update(item.id, { url: e.target.value })}
               placeholder="https://github.com/…"
             />
-            <MobileTextarea
+            <MobileAITextarea
               label="Opis"
               value={item.description}
-              onChange={(e) => update(item.id, { description: e.target.value })}
+              onChange={(v) => update(item.id, { description: v })}
               rows={3}
               placeholder="Co robi projekt, Twoja rola, stack, wynik."
+              aiField={`projects.${idx}.description`}
+              aiFieldLabel={`Opis projektu: ${item.name || "bez nazwy"}`}
             />
           </div>
         </div>

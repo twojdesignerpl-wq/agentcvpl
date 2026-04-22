@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { CaretDown, Eye, EyeSlash } from "@phosphor-icons/react/dist/ssr";
 import type { Icon } from "@phosphor-icons/react";
@@ -30,12 +30,30 @@ export function MobileSectionAccordion({
   children,
 }: Props) {
   const [open, setOpen] = useState(defaultOpen);
+  const sectionRef = useRef<HTMLElement>(null);
   const contentId = `mobile-section-${id}`;
+  const anchorId = `section-${id}`;
+
+  const handleToggle = () => {
+    const willOpen = !open;
+    setOpen(willOpen);
+    if (willOpen && sectionRef.current) {
+      // Offset dla top-bar (48px) + jump-bar (~44px) + trochę oddechu
+      const OFFSET = 104;
+      requestAnimationFrame(() => {
+        const top =
+          sectionRef.current!.getBoundingClientRect().top + window.scrollY - OFFSET;
+        window.scrollTo({ top, behavior: "smooth" });
+      });
+    }
+  };
 
   return (
     <section
+      ref={sectionRef}
+      id={anchorId}
       className={cn(
-        "overflow-hidden rounded-2xl border bg-[color:var(--cream-soft)] transition-colors",
+        "scroll-mt-28 overflow-hidden rounded-2xl border bg-[color:var(--cream-soft)] transition-colors",
         open
           ? "border-[color:color-mix(in_oklab,var(--ink)_22%,transparent)]"
           : "border-[color:color-mix(in_oklab,var(--ink)_10%,transparent)]",
@@ -44,10 +62,10 @@ export function MobileSectionAccordion({
       <div className="flex items-center">
         <button
           type="button"
-          onClick={() => setOpen((v) => !v)}
+          onClick={handleToggle}
           aria-expanded={open}
           aria-controls={contentId}
-          className="tap-target flex flex-1 items-center gap-3 px-4 py-3 text-left"
+          className="tap-target flex flex-1 items-center gap-3 px-4 py-3 text-left active:scale-[0.995]"
         >
           <span
             aria-hidden
