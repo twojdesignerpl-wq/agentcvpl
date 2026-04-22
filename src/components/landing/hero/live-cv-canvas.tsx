@@ -236,7 +236,7 @@ export function LiveCvCanvas() {
       <motion.div
         ref={canvasRef}
         style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-        className="relative min-h-[440px] w-full overflow-hidden rounded-[2px] bg-[color:var(--cream-soft)] ring-ink grain sm:aspect-[1/1.1] sm:min-h-0"
+        className="relative h-[460px] w-full overflow-hidden rounded-[2px] bg-[color:var(--cream-soft)] ring-ink grain sm:aspect-[1/1.1] sm:h-auto"
       >
         {/* Paper header ink stripe */}
         <div className="absolute left-0 right-0 top-0 h-1.5 bg-[color:var(--ink)]" />
@@ -252,7 +252,7 @@ export function LiveCvCanvas() {
             className="relative flex h-full flex-col gap-2 px-4 pb-4 pt-6 sm:gap-3 sm:px-9 sm:pb-5 sm:pt-12"
           >
             {/* Nameplate */}
-            <div className="border-b border-[color:var(--ink)]/12 pb-2 sm:pb-3">
+            <div className="shrink-0 border-b border-[color:var(--ink)]/12 pb-2 sm:pb-3">
               <p className="mono-label text-[0.52rem] tracking-[0.12em] text-[color:var(--ink)]/50 sm:text-[0.6rem]">
                 CV · PRACUŚ · {persona.company.toUpperCase()}
               </p>
@@ -267,12 +267,12 @@ export function LiveCvCanvas() {
               </p>
             </div>
 
-            {/* AGENT FOUND chips — 6 desktop (2×3), 4 mobile (2×2) */}
-            <div className="py-1 sm:py-2">
+            {/* AGENT FOUND chips — 6 desktop (2×3), 4 mobile (2×2) — FIXED height żeby content się nie rozciągał */}
+            <div className="shrink-0 py-1 sm:py-2">
               <span className="mono-label mb-1 block text-[0.54rem] tracking-[0.12em] text-[color:var(--ink)]/40 sm:mb-1.5 sm:text-[0.65rem]">
                 AGENT FOUND
               </span>
-              <div className="grid min-h-[3.25rem] grid-cols-2 content-start gap-1 sm:min-h-[4.5rem] sm:grid-cols-3 sm:gap-1.5">
+              <div className="grid h-[3.25rem] grid-cols-2 content-start gap-1 sm:h-auto sm:min-h-[4.5rem] sm:grid-cols-3 sm:gap-1.5">
                 <AnimatePresence mode="popLayout">
                   {persona.keywords.slice(0, revealedKeywords).map((kw, i) => (
                     <motion.div
@@ -304,8 +304,8 @@ export function LiveCvCanvas() {
               </div>
             </div>
 
-            {/* Typed lines */}
-            <div className="flex flex-1 flex-col gap-1.5 text-left sm:gap-2.5">
+            {/* Typed lines — flex-1 + overflow-hidden; na mobile przycinamy po 3, nie rozciągamy karty */}
+            <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden text-left sm:gap-2.5">
               {typed.filter(Boolean).map((line, i) => (
                 <motion.div
                   key={`${persona.id}-${i}-${line.label}`}
@@ -366,7 +366,7 @@ export function LiveCvCanvas() {
             </div>
 
             {/* ATS matching bar */}
-            <div className="mt-auto flex flex-col gap-1.5 border-t border-[color:var(--ink)]/12 pt-2.5 sm:gap-2 sm:pt-4">
+            <div className="mt-auto flex shrink-0 flex-col gap-1.5 border-t border-[color:var(--ink)]/12 pt-2.5 sm:gap-2 sm:pt-4">
               <div className="flex items-center justify-between">
                 <span className="mono-label text-[0.52rem] tracking-[0.12em] text-[color:var(--ink)]/55 sm:text-[0.6rem]">
                   ATS MATCH
