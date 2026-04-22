@@ -163,29 +163,29 @@ export function JobMatchDialog({ open, onOpenChange, onSubmit }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-[920px] w-[calc(100vw-3rem)] p-0 bg-cream-soft border-ink/10 overflow-hidden shadow-[0_40px_100px_-30px_rgba(10,14,26,0.35)]">
-        <DialogHeader className="px-8 pt-7 pb-5 border-b border-ink/8 bg-gradient-to-br from-cream-soft via-cream to-cream-soft">
-          <div className="flex items-start gap-4">
+      <DialogContent className="flex max-h-[calc(100dvh-2rem)] w-[calc(100vw-1.5rem)] max-w-[calc(100vw-1.5rem)] flex-col gap-0 overflow-hidden border-ink/10 bg-cream-soft p-0 shadow-[0_40px_100px_-30px_rgba(10,14,26,0.35)] sm:max-h-[calc(100dvh-4rem)] sm:w-[calc(100vw-3rem)] sm:max-w-[920px]">
+        <DialogHeader className="border-b border-ink/8 bg-gradient-to-br from-cream-soft via-cream to-cream-soft px-4 pb-4 pt-5 sm:px-8 sm:pb-5 sm:pt-7">
+          <div className="flex items-start gap-3 sm:gap-4">
             <span
               aria-hidden
-              className="shrink-0 size-12 rounded-2xl bg-saffron/20 grid place-items-center"
+              className="grid size-10 shrink-0 place-items-center rounded-xl bg-saffron/20 sm:size-12 sm:rounded-2xl"
             >
-              <Target size={22} weight="duotone" className="text-[color:var(--saffron)]" />
+              <Target size={18} weight="duotone" className="text-[color:var(--saffron)] sm:size-[22px]" />
             </span>
-            <div className="flex flex-col gap-1.5 min-w-0">
-              <DialogTitle className="font-heading text-[22px] font-semibold text-ink leading-[1.15] tracking-[-0.015em]">
+            <div className="flex min-w-0 flex-col gap-1 sm:gap-1.5">
+              <DialogTitle className="font-heading text-[clamp(1.1rem,5vw,1.375rem)] font-semibold leading-[1.15] tracking-[-0.015em] text-ink">
                 Dopasuj CV do ogłoszenia
               </DialogTitle>
-              <p className="text-[14px] text-ink-muted leading-relaxed font-medium">
-                Wklej <strong className="text-ink font-semibold">link</strong> do ogłoszenia lub
-                jego <strong className="text-ink font-semibold">treść</strong>. Pracuś
-                przeanalizuje dopasowanie, wskaże braki i zaproponuje konkretne zmiany w CV.
+              <p className="text-[12.5px] font-medium leading-relaxed text-ink-muted sm:text-[14px]">
+                Wklej <strong className="font-semibold text-ink">link</strong> do ogłoszenia lub
+                jego <strong className="font-semibold text-ink">treść</strong>. Pracuś wskaże
+                braki i zaproponuje zmiany w CV.
               </p>
             </div>
           </div>
         </DialogHeader>
 
-        <div className="px-8 py-6 flex flex-col gap-6 max-h-[68vh] overflow-y-auto">
+        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4 sm:gap-6 sm:px-8 sm:py-6">
           {/* Pobierz z linka */}
           {isUrlOnly || extractedUrl ? (
             <FetchPanel
@@ -196,7 +196,7 @@ export function JobMatchDialog({ open, onOpenChange, onSubmit }: Props) {
           ) : null}
 
           <div className="flex flex-col gap-2">
-            <label className="text-[11.5px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
+            <label className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-muted sm:text-[11.5px]">
               Treść ogłoszenia
             </label>
             <textarea
@@ -207,27 +207,32 @@ export function JobMatchDialog({ open, onOpenChange, onSubmit }: Props) {
                   setFetchState({ status: "idle" });
                 }
               }}
-              placeholder="Wklej pełną treść ogłoszenia (wymagania, obowiązki, oferta — min. 50 znaków) lub sam link do ogłoszenia, np. https://justjoin.it/job/..."
-              className="rounded-2xl border border-ink/12 bg-cream px-4 py-3.5 text-[14.5px] leading-relaxed text-ink placeholder:text-ink-muted/70 focus:border-saffron focus:ring-4 focus:ring-saffron/15 outline-none resize-y min-h-[320px] max-h-[480px] font-body font-medium shadow-[0_2px_8px_-4px_rgba(10,14,26,0.06)] transition-[border-color,box-shadow]"
-              rows={12}
+              placeholder="Wklej pełną treść ogłoszenia (min. 50 znaków) lub link do ogłoszenia, np. https://justjoin.it/job/…"
+              className="min-h-[180px] max-h-[480px] resize-y rounded-2xl border border-ink/12 bg-cream px-3.5 py-3 font-body text-[16px] font-medium leading-relaxed text-ink shadow-[0_2px_8px_-4px_rgba(10,14,26,0.06)] outline-none transition-[border-color,box-shadow] placeholder:text-ink-muted/70 focus:border-saffron focus:ring-4 focus:ring-saffron/15 sm:min-h-[320px] sm:px-4 sm:py-3.5 sm:text-[14.5px]"
+              rows={8}
             />
-            <div className="flex justify-between items-center gap-3 text-[11.5px] font-medium">
-              <span className="text-ink-muted">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-medium sm:gap-3 sm:text-[11.5px]">
+              <span className="min-w-0 flex-1 text-ink-muted">
                 {isUrlOnly
-                  ? "Wykryto link — kliknij „Pobierz treść z linku”, aby zaciągnąć ogłoszenie"
-                  : "Wklej opis (min. 50 znaków) lub wklej link do ogłoszenia"}
+                  ? "Wykryto link — kliknij „Pobierz treść z linku"
+                  : "Wklej opis (min. 50 znaków) lub wklej link"}
               </span>
-              <span className={count > MAX_LEN ? "text-[color:var(--rust)]" : "text-ink-muted"}>
+              <span
+                className={cn(
+                  "shrink-0 tabular-nums",
+                  count > MAX_LEN ? "text-[color:var(--rust)]" : "text-ink-muted",
+                )}
+              >
                 {count.toLocaleString("pl-PL")} / 8000
               </span>
             </div>
           </div>
 
           <div className="flex flex-col gap-2.5">
-            <label className="text-[11.5px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
+            <label className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-muted sm:text-[11.5px]">
               Skąd ogłoszenie <span className="font-normal normal-case tracking-normal text-ink-muted/70">(opcjonalnie)</span>
             </label>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5 sm:gap-2">
               {(Object.keys(JOB_SOURCE_LABELS) as JobSource[]).map((s) => (
                 <button
                   key={s}
@@ -235,8 +240,8 @@ export function JobMatchDialog({ open, onOpenChange, onSubmit }: Props) {
                   onClick={() => setSource(source === s ? undefined : s)}
                   className={
                     source === s
-                      ? "rounded-full border border-saffron bg-saffron/15 px-4 py-2 text-[13px] font-semibold text-ink shadow-[0_2px_8px_-4px_rgba(10,14,26,0.1)]"
-                      : "rounded-full border border-ink/10 bg-cream px-4 py-2 text-[13px] font-medium text-ink-soft hover:border-saffron/40 hover:text-ink hover:bg-saffron/5 transition-[background-color,border-color,color]"
+                      ? "rounded-full border border-saffron bg-saffron/15 px-3 py-1.5 text-[12.5px] font-semibold text-ink shadow-[0_2px_8px_-4px_rgba(10,14,26,0.1)] sm:px-4 sm:py-2 sm:text-[13px]"
+                      : "rounded-full border border-ink/10 bg-cream px-3 py-1.5 text-[12.5px] font-medium text-ink-soft transition-[background-color,border-color,color] hover:border-saffron/40 hover:bg-saffron/5 hover:text-ink sm:px-4 sm:py-2 sm:text-[13px]"
                   }
                 >
                   {JOB_SOURCE_LABELS[s]}
@@ -246,26 +251,29 @@ export function JobMatchDialog({ open, onOpenChange, onSubmit }: Props) {
           </div>
         </div>
 
-        <div className="px-8 py-5 bg-[color-mix(in_oklab,var(--cream)_92%,black_2%)] border-t border-ink/8 flex justify-between items-center gap-4">
+        <div
+          className="flex shrink-0 flex-col gap-3 border-t border-ink/8 bg-[color-mix(in_oklab,var(--cream)_92%,black_2%)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-8 sm:py-5"
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)" }}
+        >
           {existing ? (
             <button
               type="button"
               onClick={handleClear}
-              className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-ink-muted hover:text-rust transition-colors whitespace-nowrap"
+              className="inline-flex items-center gap-1.5 whitespace-nowrap text-[12px] font-medium text-ink-muted transition-colors hover:text-rust sm:text-[12.5px]"
             >
               <X size={13} weight="bold" /> Wyczyść ogłoszenie
             </button>
           ) : (
-            <span className="text-[11.5px] text-ink-muted/70">
+            <span className="hidden text-[11.5px] text-ink-muted/70 sm:inline">
               Treść jest przechowywana tylko w Twojej sesji.
             </span>
           )}
-          <div className="flex gap-2.5 items-center shrink-0">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-2.5">
             <Button
               type="button"
               variant="ghost"
               onClick={() => onOpenChange(false)}
-              className="text-ink-muted hover:text-ink text-[13.5px] font-medium"
+              className="flex-1 text-[13.5px] font-medium text-ink-muted hover:text-ink sm:flex-initial"
             >
               Anuluj
             </Button>
@@ -273,17 +281,17 @@ export function JobMatchDialog({ open, onOpenChange, onSubmit }: Props) {
               type="button"
               disabled={!canSubmit}
               onClick={handleSubmit}
-              className="bg-ink text-cream hover:bg-[color-mix(in_oklab,var(--ink)_88%,white)] inline-flex items-center gap-2 px-5 py-2.5 text-[13.5px] font-semibold shadow-[0_4px_14px_-6px_rgba(10,14,26,0.35)]"
+              className="inline-flex flex-1 items-center justify-center gap-2 bg-ink px-4 py-2.5 text-[13px] font-semibold text-cream shadow-[0_4px_14px_-6px_rgba(10,14,26,0.35)] hover:bg-[color-mix(in_oklab,var(--ink)_88%,white)] sm:flex-initial sm:px-5 sm:text-[13.5px]"
             >
               {fetchState.status === "loading" ? (
                 <>
                   <Spinner size={15} className="animate-spin" />
-                  Pobieram treść…
+                  Pobieram…
                 </>
               ) : isUrlOnly && fetchState.status !== "success" ? (
-                "Pobierz i przeanalizuj"
+                "Pobierz i analizuj"
               ) : (
-                "Przeanalizuj dopasowanie"
+                "Przeanalizuj"
               )}
             </Button>
           </div>
@@ -309,7 +317,7 @@ function FetchPanel({
   return (
     <div
       className={cn(
-        "rounded-2xl border p-4 flex flex-col gap-2.5 transition-colors shadow-[0_2px_8px_-4px_rgba(10,14,26,0.06)]",
+        "flex flex-col gap-2.5 rounded-2xl border p-3 shadow-[0_2px_8px_-4px_rgba(10,14,26,0.06)] transition-colors sm:p-4",
         success
           ? "border-[color:var(--jade)]/40 bg-[color-mix(in_oklab,var(--jade)_6%,var(--cream))]"
           : error
@@ -317,11 +325,11 @@ function FetchPanel({
             : "border-saffron/35 bg-saffron/6",
       )}
     >
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-start gap-2.5 sm:flex-nowrap sm:items-center sm:gap-3">
         <span
           aria-hidden
           className={cn(
-            "shrink-0 size-10 rounded-xl grid place-items-center",
+            "grid size-9 shrink-0 place-items-center rounded-xl sm:size-10",
             success
               ? "bg-[color:var(--jade)]/15"
               : error
@@ -330,24 +338,27 @@ function FetchPanel({
           )}
         >
           {loading ? (
-            <Spinner size={18} className="text-[color:var(--saffron)] animate-spin" />
+            <Spinner size={16} className="animate-spin text-[color:var(--saffron)]" />
           ) : success ? (
-            <CheckCircle size={18} weight="fill" className="text-[color:var(--jade)]" />
+            <CheckCircle size={16} weight="fill" className="text-[color:var(--jade)]" />
           ) : error ? (
-            <WarningOctagon size={18} weight="fill" className="text-[color:var(--rust)]" />
+            <WarningOctagon size={16} weight="fill" className="text-[color:var(--rust)]" />
           ) : (
-            <LinkIcon size={18} weight="duotone" className="text-[color:var(--saffron)]" />
+            <LinkIcon size={16} weight="duotone" className="text-[color:var(--saffron)]" />
           )}
         </span>
-        <div className="flex-1 min-w-0">
-          <div className="text-[14px] font-semibold text-ink leading-tight tracking-[-0.005em]">
+        <div className="min-w-0 flex-1">
+          <div className="text-[13px] font-semibold leading-tight tracking-[-0.005em] text-ink sm:text-[14px]">
             {success
               ? "Pobrano ogłoszenie"
               : error
                 ? "Nie udało się pobrać"
                 : "Wykryto link do ogłoszenia"}
           </div>
-          <div className="text-[12px] font-medium text-ink-muted truncate mt-0.5" title={url}>
+          <div
+            className="mt-0.5 truncate text-[11.5px] font-medium text-ink-muted sm:text-[12px]"
+            title={url}
+          >
             {state.status === "success" && state.hostname
               ? `${state.hostname} · ${state.title || "bez tytułu"}`
               : url}
@@ -358,23 +369,23 @@ function FetchPanel({
             type="button"
             onClick={onFetch}
             className={cn(
-              "shrink-0 inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-semibold transition-colors",
+              "inline-flex shrink-0 basis-full items-center justify-center gap-1.5 rounded-full px-3 py-2 text-[12.5px] font-semibold transition-colors sm:basis-auto sm:px-4 sm:text-[13px]",
               success
                 ? "border border-ink/15 bg-cream text-ink hover:border-saffron hover:bg-saffron/5"
-                : "bg-ink text-cream hover:bg-[color-mix(in_oklab,var(--ink)_88%,white)] shadow-[0_4px_14px_-6px_rgba(10,14,26,0.3)]",
+                : "bg-ink text-cream shadow-[0_4px_14px_-6px_rgba(10,14,26,0.3)] hover:bg-[color-mix(in_oklab,var(--ink)_88%,white)]",
             )}
           >
             {success ? (
               <>
-                <ArrowClockwise size={13} weight="bold" /> Pobierz ponownie
+                <ArrowClockwise size={12} weight="bold" /> Pobierz ponownie
               </>
             ) : error ? (
               <>
-                <ArrowClockwise size={13} weight="bold" /> Spróbuj ponownie
+                <ArrowClockwise size={12} weight="bold" /> Spróbuj ponownie
               </>
             ) : (
               <>
-                <DownloadSimple size={13} weight="bold" /> Pobierz treść z linku
+                <DownloadSimple size={12} weight="bold" /> Pobierz z linku
               </>
             )}
           </button>
@@ -382,19 +393,21 @@ function FetchPanel({
       </div>
 
       {error ? (
-        <div className="text-[12.5px] text-ink-soft leading-snug pl-[52px] font-medium">{state.message}</div>
+        <div className="text-[12px] font-medium leading-snug text-ink-soft sm:pl-[52px] sm:text-[12.5px]">
+          {state.message}
+        </div>
       ) : null}
       {state.status === "success" && state.truncated ? (
-        <div className="text-[12px] text-ink-muted leading-snug pl-[52px] font-medium">
+        <div className="text-[11.5px] font-medium leading-snug text-ink-muted sm:pl-[52px] sm:text-[12px]">
           Treść została przycięta — sprawdź czy zawiera wszystkie wymagania.
         </div>
       ) : null}
       {state.status === "idle" ? (
-        <div className="text-[12px] text-ink-muted leading-snug pl-[52px] font-medium">
-          Pobiorę treść z dowolnego polskiego portalu pracy (pracuj.pl, nofluffjobs, justjoin,
-          olx/praca, linkedin/jobs, rocketjobs, bulldogjob, theprotocol, aplikuj, praca.pl i
-          inne) oraz wielu zagranicznych. Link który nie prowadzi do oferty pracy zostanie
-          odrzucony <strong className="text-ink font-semibold">po pobraniu i analizie treści</strong>.
+        <div className="text-[11.5px] font-medium leading-snug text-ink-muted sm:pl-[52px] sm:text-[12px]">
+          Pobiorę treść z polskich portali pracy (pracuj.pl, nofluffjobs, justjoin, olx/praca,
+          linkedin/jobs, rocketjobs, theprotocol, praca.pl) i wielu zagranicznych. Link który nie
+          jest ofertą pracy zostanie odrzucony{" "}
+          <strong className="font-semibold text-ink">po pobraniu i analizie</strong>.
         </div>
       ) : null}
     </div>
