@@ -6,7 +6,7 @@ import { MarketingShell } from "@/components/landing/_shared/marketing-shell";
 import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { isAdminUser } from "@/lib/auth/admin";
-import { getUserPlan, PLAN_QUOTAS, planLabel } from "@/lib/plans/quotas";
+import { getEffectivePlan, PLAN_QUOTAS, planLabel } from "@/lib/plans/quotas";
 import { UsageChip } from "@/components/admin/usage-chip";
 import { SignOutButton } from "./sign-out-button";
 
@@ -27,10 +27,12 @@ export default async function KontoPage() {
 
   const user = data.user;
   const email = user.email ?? "—";
-  const plan = getUserPlan(user);
+  const effective = await getEffectivePlan(user);
+  const plan = effective.tier;
   const quota = PLAN_QUOTAS[plan];
   const createdAt = user.created_at ? new Date(user.created_at) : null;
   const admin = isAdminUser(user);
+  const hasPack = effective.source === "pro_pack";
 
   // Usage w tym miesiącu (service role — omija RLS żeby mieć count nawet gdy nowy user)
   const service = createSupabaseServiceClient();
@@ -47,6 +49,12 @@ export default async function KontoPage() {
   const downloadLimit = Number.isFinite(quota.downloadsPerMonth)
     ? (quota.downloadsPerMonth as number)
     : ("∞" as const);
+
+  // Pro Pack: wyświetl pozostałe credits z puli (nie miesięczny licznik)
+  const packUsed = hasPack
+    ? (effective.credits_total ?? 0) - (effective.credits_remaining ?? 0)
+    : 0;
+  const packLimit = hasPack ? (effective.credits_total ?? 10) : 0;
 
   return (
     <MarketingShell>
@@ -76,15 +84,35 @@ export default async function KontoPage() {
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-[color:color-mix(in_oklab,var(--saffron)_22%,transparent)] px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink">
                     <span className="size-1.5 rounded-full bg-[color:var(--saffron)]" aria-hidden />
                     {planLabel(plan)}
+                    {hasPack ? (
+                      <span className="ml-1 text-[9px] opacity-70">Pack</span>
+                    ) : null}
                   </span>
                 </dd>
               </div>
-              <div className="flex items-baseline justify-between gap-4">
-                <dt className="text-[color:var(--ink-muted)]">Pobrania w tym miesiącu</dt>
-                <dd>
-                  <UsageChip plan={plan} used={used} limit={downloadLimit} label="PDF/DOCX" />
-                </dd>
-              </div>
+              {hasPack ? (
+                <div className="flex items-baseline justify-between gap-4">
+                  <dt className="text-[color:var(--ink-muted)]">Pro Pack — kredyty</dt>
+                  <dd>
+                    <UsageChip
+                      plan={plan}
+                      used={packUsed}
+                      limit={packLimit}
+                      label="Pozostało"
+                    />
+                    <p className="mt-1 text-[11px] text-[color:var(--ink-muted)]">
+                      Nie wygasają
+                    </p>
+                  </dd>
+                </div>
+              ) : (
+                <div className="flex items-baseline justify-between gap-4">
+                  <dt className="text-[color:var(--ink-muted)]">Pobrania w tym miesiącu</dt>
+                  <dd>
+                    <UsageChip plan={plan} used={used} limit={downloadLimit} label="PDF/DOCX" />
+                  </dd>
+                </div>
+              )}
               {createdAt ? (
                 <div className="flex items-baseline justify-between gap-4">
                   <dt className="text-[color:var(--ink-muted)]">Konto utworzone</dt>

@@ -129,18 +129,36 @@ export default async function SubskrypcjaPage() {
                       </li>
                     ))}
                   </ul>
-                  <div className="pt-2">
+                  <div className="flex flex-col gap-2 pt-2">
                     {isCurrent ? (
                       <span className="inline-flex w-full items-center justify-center rounded-full border border-[color:var(--jade)]/40 bg-[color:var(--jade)]/10 px-4 py-3 text-[14px] font-semibold text-[color:var(--jade)]">
                         Twój aktualny plan
                       </span>
                     ) : (
-                      <CheckoutButton
-                        plan={plan.id as "pro" | "unlimited"}
-                        disabled={!stripeReady || !stripePlan.priceId}
-                        label={plan.cta}
-                      />
+                      <>
+                        <CheckoutButton
+                          plan={plan.id as "pro" | "unlimited"}
+                          mode="sub"
+                          disabled={!stripeReady || !stripePlan.priceId}
+                          label={`${plan.cta} — miesięcznie`}
+                          variant="primary"
+                        />
+                        {plan.oneTime ? (
+                          <CheckoutButton
+                            plan={plan.id as "pro" | "unlimited"}
+                            mode="pack"
+                            disabled={!stripeReady}
+                            label={`${plan.oneTime.cta} — ${plan.oneTime.price} jednorazowo`}
+                            variant="ghost"
+                          />
+                        ) : null}
+                      </>
                     )}
+                    {plan.oneTime ? (
+                      <p className="text-center text-[11.5px] text-[color:var(--ink-muted)]">
+                        {plan.oneTime.note}
+                      </p>
+                    ) : null}
                   </div>
                 </div>
               );

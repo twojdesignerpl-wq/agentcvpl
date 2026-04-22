@@ -7,11 +7,13 @@ import { cn } from "@/lib/utils";
 
 type Props = {
   plan: "pro" | "unlimited";
+  mode?: "sub" | "pack";
   label: string;
   disabled?: boolean;
+  variant?: "primary" | "ghost";
 };
 
-export function CheckoutButton({ plan, label, disabled }: Props) {
+export function CheckoutButton({ plan, mode = "sub", label, disabled, variant = "primary" }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,7 +25,7 @@ export function CheckoutButton({ plan, label, disabled }: Props) {
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan, mode }),
       });
       const data = (await res.json().catch(() => ({}))) as {
         url?: string;
@@ -35,7 +37,7 @@ export function CheckoutButton({ plan, label, disabled }: Props) {
         return;
       }
       if (data.url) {
-        track("checkout_started", { plan });
+        track("checkout_started", { plan, mode });
         window.location.href = data.url;
         return;
       }
@@ -54,7 +56,10 @@ export function CheckoutButton({ plan, label, disabled }: Props) {
         onClick={start}
         disabled={disabled || loading}
         className={cn(
-          "tap-target inline-flex w-full items-center justify-center gap-2 rounded-full bg-ink px-5 py-3 text-[14px] font-semibold text-cream transition-opacity hover:opacity-95 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50",
+          "tap-target inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-[14px] font-semibold transition-all hover:opacity-95 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50",
+          variant === "primary"
+            ? "bg-ink text-cream"
+            : "border border-[color:var(--ink)]/20 bg-[color:var(--cream)] text-ink hover:border-[color:var(--ink)]/50",
         )}
       >
         {loading ? "Przekierowuję…" : label}

@@ -118,6 +118,17 @@ export type PricingPlan = {
   popular?: boolean;
   features: string[];
   highlight?: string;
+  /** Wariant podobizny Pracusia wyświetlany w karcie planu */
+  pracusVariant: "ikona-1" | "ikona-2" | "podobizna";
+  /** Opcjonalny wariant jednorazowy (Pro Pack w V2) */
+  oneTime?: {
+    price: string;
+    cadence: string;
+    label: string;
+    note: string;
+    href: string;
+    cta: string;
+  };
 };
 
 export type FaqItem = {
@@ -465,6 +476,7 @@ export const pricingPlans: PricingPlan[] = [
     tagline: "Kreator w akcji. Pracuś AI zaczyna się od Pro.",
     cta: "Zacznij za darmo",
     ctaHref: "/kreator",
+    pracusVariant: "ikona-1",
     features: [
       "1 pobranie CV (PDF lub DOCX)",
       "5 szablonów pod ATS",
@@ -480,9 +492,10 @@ export const pricingPlans: PricingPlan[] = [
     cadence: "miesięcznie",
     tagline: "Pełny Pracuś AI dla aktywnie szukających.",
     cta: "Wybierz Pro",
-    ctaHref: "/kreator?plan=pro",
+    ctaHref: "/checkout?plan=pro&mode=sub",
     popular: true,
     highlight: "Najczęściej wybierany",
+    pracusVariant: "ikona-2",
     features: [
       "10 pobrań CV miesięcznie",
       "Pełny Pracuś AI — chat + propozycje",
@@ -492,6 +505,14 @@ export const pricingPlans: PricingPlan[] = [
       "Wszystkie 5 szablonów",
       "Priorytet generowania agenta",
     ],
+    oneTime: {
+      price: "19 zł",
+      cadence: "jednorazowo",
+      label: "Pro Pack",
+      note: "10 pobrań · kredyty nie wygasają",
+      href: "/checkout?plan=pro&mode=pack",
+      cta: "Kup Pro Pack",
+    },
   },
   {
     id: "unlimited",
@@ -500,8 +521,9 @@ export const pricingPlans: PricingPlan[] = [
     cadence: "miesięcznie",
     tagline: "Wszystko z Pro — bez limitu pobrań.",
     cta: "Wybierz Unlimited",
-    ctaHref: "/kreator?plan=unlimited",
+    ctaHref: "/checkout?plan=unlimited&mode=sub",
     highlight: "Dla recruiterów i coachów",
+    pracusVariant: "podobizna",
     features: [
       "Bez limitu pobrań CV",
       "Priority agent — szybsze AI",
@@ -541,6 +563,10 @@ export const faqItems: FaqItem[] = [
   {
     q: "Czym różnią się plany Free, Pro i Unlimited?",
     a: "Free (0 zł, na zawsze): 1 pobranie CV, edytor, 5 szablonów — bez asystenta Pracuś AI. Pro (19 zł miesięcznie): 10 pobrań CV, pełny Pracuś (chat, propozycje, dopasowanie do ogłoszeń, live ATS score, historia wersji). Unlimited (39 zł miesięcznie): wszystko z Pro plus bez limitu pobrań, priority agent, faktury VAT dla firm. Rezygnacja jednym klikiem — od razu, bez okresu wypowiedzenia.",
+  },
+  {
+    q: "Czym różni się Pro Pack od Pro miesięcznie?",
+    a: "Cena ta sama — 19 zł. Różnica w sposobie płatności. Pro miesięcznie: płacisz 19 zł co miesiąc, 10 pobrań w każdym miesiącu, subskrypcja odnawia się automatycznie, rezygnujesz kiedy chcesz. Pro Pack: płacisz 19 zł raz, dostajesz 10 pobrań, bez odnowień, kredyty nie wygasają — wykorzystasz je kiedy będziesz potrzebować. Wybierasz w zależności od stylu pracy: aktywnie szukasz → subskrypcja, sporadycznie aktualizujesz CV → pack.",
   },
   {
     q: "Skąd Pracuś zna polskie branże i uprawnienia?",

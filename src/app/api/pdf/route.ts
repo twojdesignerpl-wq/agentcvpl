@@ -2,7 +2,7 @@ import { cvDataSchema } from "@/lib/cv/schema";
 import { renderCVToHTML } from "@/lib/cv/render-html";
 import { requireUser } from "@/lib/auth/guard";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
-import { canDownload, planLimitResponse, recordUsage } from "@/lib/plans/usage";
+import { canDownload, decrementPackCredit, planLimitResponse, recordUsage } from "@/lib/plans/usage";
 import { z } from "zod";
 import type { User } from "@supabase/supabase-js";
 
@@ -85,14 +85,16 @@ export async function POST(request: Request): Promise<Response> {
   // Auth gate — pobranie PDF wymaga zalogowanego użytkownika gdy Supabase jest skonfigurowany.
   // W dev bez Supabase (anon-only) działa jak przedtem.
   let authUser: User | null = null;
+  let usedPackSource = false;
   if (isSupabaseConfigured()) {
     const guard = await requireUser();
     if (!guard.ok) return guard.response;
     authUser = guard.user;
 
-    // Plan gating — sprawdzenie limitu pobrań per-plan (Free:1, Pro:10, Unlimited:∞)
+    // Plan gating — sprawdzenie limitu pobrań per-plan (Free:1, Pro:10, Unlimited:∞, Pro Pack: credits)
     const check = await canDownload(authUser);
     if (!check.ok) return planLimitResponse(check);
+    usedPackSource = check.source === "pro_pack";
   }
 
   let body: unknown;
@@ -163,9 +165,15 @@ export async function POST(request: Request): Promise<Response> {
       );
     }
 
-    // Zapisz usage do audit (async, nie blokuj response)
+    // Zapisz usage do audit + dekrementuj pack credit jeśli source=pro_pack
     if (authUser) {
-      void recordUsage(authUser.id, "pdf", { bytes: pdf.length });
+      void recordUsage(authUser.id, "pdf", {
+        bytes: pdf.length,
+        source: usedPackSource ? "pro_pack" : "subscription_or_free",
+      });
+      if (usedPackSource) {
+        void decrementPackCredit(authUser.id);
+      }
     }
 
     const fileName =

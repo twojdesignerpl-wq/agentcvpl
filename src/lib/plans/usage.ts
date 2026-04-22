@@ -1,10 +1,18 @@
 import type { User } from "@supabase/supabase-js";
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
-import { PLAN_QUOTAS, getUserPlan, type PlanId } from "@/lib/plans/quotas";
+import { PLAN_QUOTAS, getEffectivePlan, type PlanId, type PlanSource } from "@/lib/plans/quotas";
 
 type UsageAction = "pdf" | "docx" | "ai_chat" | "ai_cv" | "job_match";
 
-export type UsageOk = { ok: true; remaining: number; limit: number; plan: PlanId; used: number };
+export type UsageOk = {
+  ok: true;
+  remaining: number;
+  limit: number;
+  plan: PlanId;
+  used: number;
+  source?: PlanSource;
+  pack_id?: string | null;
+};
 export type UsageFail =
   | { ok: false; reason: "plan_limit"; plan: PlanId; limit: number; used: number }
   | { ok: false; reason: "no_access"; plan: PlanId; limit: 0; used: 0 };
@@ -42,23 +50,66 @@ async function countUsage(
 }
 
 export async function canDownload(user: User): Promise<UsageCheck> {
-  const plan = getUserPlan(user);
+  const effective = await getEffectivePlan(user);
+
+  // Pro Pack → sprawdź credits_remaining (bez miesięcznego limitu)
+  if (effective.source === "pro_pack") {
+    const remaining = effective.credits_remaining ?? 0;
+    const total = effective.credits_total ?? 0;
+    if (remaining <= 0) {
+      return { ok: false, reason: "plan_limit", plan: "pro", limit: total, used: total };
+    }
+    return {
+      ok: true,
+      remaining,
+      limit: total,
+      plan: "pro",
+      used: total - remaining,
+      source: "pro_pack",
+      pack_id: effective.pack_id,
+    };
+  }
+
+  // Subscription / free → miesięczny limit z usage_logs
+  const plan = effective.tier;
   const limit = PLAN_QUOTAS[plan].downloadsPerMonth;
   if (!Number.isFinite(limit)) {
-    return { ok: true, remaining: Number.POSITIVE_INFINITY, limit, plan, used: 0 };
+    return { ok: true, remaining: Number.POSITIVE_INFINITY, limit, plan, used: 0, source: effective.source };
   }
   const used = await countUsage(user.id, ["pdf", "docx"], firstOfMonth());
   if (used >= limit) {
     return { ok: false, reason: "plan_limit", plan, limit, used };
   }
-  return { ok: true, remaining: limit - used, limit, plan, used };
+  return { ok: true, remaining: limit - used, limit, plan, used, source: effective.source };
+}
+
+/**
+ * Dekrementuje 1 kredyt z Pro Pack (FIFO, atomic przez SQL RPC).
+ * Wołane PO udanym eksporcie (nie przed — żeby nie tracić credit na błąd Puppeteer).
+ * Zwraca liczbę pozostałych credits albo -1 jeśli brak pack/credits.
+ */
+export async function decrementPackCredit(userId: string): Promise<number> {
+  try {
+    const admin = createSupabaseServiceClient();
+    const { data, error } = await admin.rpc("decrement_pack_credit", { p_user_id: userId });
+    if (error) {
+      console.error("[decrementPackCredit]", error);
+      return -1;
+    }
+    return typeof data === "number" ? data : -1;
+  } catch (err) {
+    console.error("[decrementPackCredit]", err);
+    return -1;
+  }
 }
 
 export async function canUseAI(
   user: User,
   kind: "chat" | "cv" | "job_match",
 ): Promise<UsageCheck> {
-  const plan = getUserPlan(user);
+  // Pro Pack users mają dostęp do AI tak jak Pro sub (limity dzienne Pro).
+  const effective = await getEffectivePlan(user);
+  const plan = effective.tier;
   const quota = PLAN_QUOTAS[plan];
   if (!quota.hasAI) {
     return { ok: false, reason: "no_access", plan, limit: 0, used: 0 };

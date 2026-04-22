@@ -4,6 +4,7 @@ import { createSupabaseServiceClient } from "@/lib/supabase/server";
 import { WelcomeEmail } from "./templates/welcome";
 import { PaymentConfirmationEmail } from "./templates/payment-confirmation";
 import { PlanGrantedEmail } from "./templates/plan-granted";
+import { PackPurchaseConfirmationEmail } from "./templates/pack-purchase-confirmation";
 
 type DispatchResult =
   | { ok: true; id: string | null; skipped?: boolean }
@@ -27,7 +28,7 @@ async function wasSent(userId: string, kind: string): Promise<boolean> {
 
 async function recordDispatch(
   userId: string,
-  kind: "welcome" | "payment" | "plan_granted",
+  kind: "welcome" | "payment" | "plan_granted" | "pack_purchase",
   resendId: string | null,
 ) {
   try {
@@ -88,6 +89,31 @@ export async function sendPaymentConfirmation(
       return { ok: false, error: error?.message ?? "send_failed" };
     }
     await recordDispatch(user.id, "payment", data.id);
+    return { ok: true, id: data.id };
+  } catch (err) {
+    return { ok: false, error: (err as Error).message };
+  }
+}
+
+export async function sendPackPurchaseConfirmation(
+  user: { id: string; email: string },
+  amount: string,
+): Promise<DispatchResult> {
+  if (!isResendConfigured()) return { ok: false, error: "resend_not_configured" };
+  try {
+    const resend = getResendClient();
+    const html = await render(PackPurchaseConfirmationEmail({ amount }));
+    const { data, error } = await resend.emails.send({
+      from: EMAIL_FROM,
+      to: user.email,
+      replyTo: EMAIL_REPLY_TO,
+      subject: "Pro Pack aktywny — masz 10 pobrań CV",
+      html,
+    });
+    if (error || !data) {
+      return { ok: false, error: error?.message ?? "send_failed" };
+    }
+    await recordDispatch(user.id, "pack_purchase", data.id);
     return { ok: true, id: data.id };
   } catch (err) {
     return { ok: false, error: (err as Error).message };

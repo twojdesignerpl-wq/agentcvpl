@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { getStripeServer } from "@/lib/stripe/server";
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
-import { sendPaymentConfirmation } from "@/lib/email/send";
+import { sendPackPurchaseConfirmation, sendPaymentConfirmation } from "@/lib/email/send";
+import { PRO_PACK } from "@/lib/stripe/plans";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -41,29 +42,73 @@ export async function POST(request: Request): Promise<Response> {
         const session = event.data.object as Stripe.Checkout.Session;
         const userId = session.client_reference_id ?? session.metadata?.user_id;
         const plan = session.metadata?.plan;
+        const kind = session.metadata?.kind; // "subscription" | "pro_pack"
         const customerId =
           typeof session.customer === "string" ? session.customer : session.customer?.id;
-        if (userId && plan) {
-          await updateUserPlan(userId, plan, customerId, "Stripe checkout.session.completed");
 
-          // Wyślij potwierdzenie płatności — fire-and-forget, nie psuj webhoku jeśli email padnie
+        if (!userId || !plan) break;
+
+        // Pobierz email usera raz (użyty dla subscription i pack)
+        const admin = createSupabaseServiceClient();
+        const { data: userData } = await admin.auth.admin.getUserById(userId);
+        const userEmail = userData.user?.email ?? "";
+
+        const amountMinor = session.amount_total ?? 0;
+        const currency = (session.currency ?? "pln").toUpperCase();
+        const amount = `${(amountMinor / 100).toFixed(2)} ${currency}`;
+
+        if (session.mode === "subscription") {
+          // Subscription flow: aktualizuj plan + audit + email
+          await updateUserPlan(userId, plan, customerId, "Stripe checkout.session.completed (subscription)");
+
           if (plan === "pro" || plan === "unlimited") {
-            try {
-              const admin = createSupabaseServiceClient();
-              const { data: userData } = await admin.auth.admin.getUserById(userId);
-              if (userData.user?.email) {
-                const amountMinor = session.amount_total ?? 0;
-                const currency = (session.currency ?? "pln").toUpperCase();
-                const amount = `${(amountMinor / 100).toFixed(2)} ${currency}`;
-                void sendPaymentConfirmation(
-                  { id: userId, email: userData.user.email },
-                  plan,
-                  amount,
-                );
-              }
-            } catch (err) {
-              console.error("[stripe:webhook] payment email send failed:", err);
+            if (userEmail) {
+              void sendPaymentConfirmation({ id: userId, email: userEmail }, plan, amount).catch(
+                (err) => console.error("[stripe:webhook] sub email failed:", err),
+              );
             }
+          }
+        } else if (session.mode === "payment" && kind === "pro_pack") {
+          // Pro Pack flow: insert credits (idempotentnie przez stripe_session_id UNIQUE)
+          try {
+            const { error: insertErr } = await admin.from("plan_credits").insert({
+              user_id: userId,
+              kind: "pro_pack",
+              credits_remaining: PRO_PACK.credits,
+              credits_granted: PRO_PACK.credits,
+              stripe_session_id: session.id,
+              stripe_customer_id: customerId ?? null,
+            });
+
+            if (insertErr) {
+              // UNIQUE violation = webhook retry, nic nie rób
+              if (insertErr.code === "23505") {
+                console.log("[stripe:webhook] pro_pack already granted for session", session.id);
+                break;
+              }
+              throw insertErr;
+            }
+
+            // Audit log
+            await admin.from("plan_grants").insert({
+              user_id: userId,
+              email: userEmail,
+              from_plan: null,
+              to_plan: "pro_pack",
+              reason: "Stripe payment (pro_pack)",
+              source: "stripe",
+              granted_by: null,
+            });
+
+            // Email — fire-and-forget
+            if (userEmail) {
+              void sendPackPurchaseConfirmation(
+                { id: userId, email: userEmail },
+                amount,
+              ).catch((err) => console.error("[stripe:webhook] pack email failed:", err));
+            }
+          } catch (err) {
+            console.error("[stripe:webhook] pro_pack insert failed:", err);
           }
         }
         break;

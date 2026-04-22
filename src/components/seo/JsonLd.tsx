@@ -48,15 +48,32 @@ export function JsonLd() {
       operatingSystem: "Web",
       applicationCategory: "BusinessApplication",
       inLanguage: "pl-PL",
-      offers: pricingPlans.map((plan) => ({
-        "@type": "Offer",
-        name: plan.name,
-        price: parsePricePLN(plan.price),
-        priceCurrency: "PLN",
-        category: plan.cadence,
-        description: plan.tagline,
-        url: `${BRAND.url}${plan.ctaHref}`,
-      })),
+      offers: pricingPlans.flatMap((plan) => {
+        const base = {
+          "@type": "Offer" as const,
+          name: plan.name,
+          price: parsePricePLN(plan.price),
+          priceCurrency: "PLN",
+          category: plan.cadence,
+          description: plan.tagline,
+          url: `${BRAND.url}${plan.ctaHref}`,
+        };
+        if (plan.oneTime) {
+          return [
+            base,
+            {
+              "@type": "Offer" as const,
+              name: `${plan.name} Pack`,
+              price: parsePricePLN(plan.oneTime.price),
+              priceCurrency: "PLN",
+              category: plan.oneTime.cadence,
+              description: `${plan.name} jednorazowo · ${plan.oneTime.note}`,
+              url: `${BRAND.url}${plan.oneTime.href}`,
+            },
+          ];
+        }
+        return [base];
+      }),
     },
     {
       "@context": "https://schema.org",

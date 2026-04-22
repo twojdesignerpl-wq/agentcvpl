@@ -32,7 +32,7 @@ export default async function AdminUserDetailPage({ params }: { params: Params }
     ?.stripe_customer_id;
 
   const since = firstOfMonthIso();
-  const [downloadsRes, aiChatRes, aiCvRes, cvCountRes, grantsRes] = await Promise.all([
+  const [downloadsRes, aiChatRes, aiCvRes, cvCountRes, grantsRes, packsRes] = await Promise.all([
     admin
       .from("usage_logs")
       .select("id", { count: "exact", head: true })
@@ -58,6 +58,12 @@ export default async function AdminUserDetailPage({ params }: { params: Params }
       .eq("user_id", id)
       .order("granted_at", { ascending: false })
       .limit(10),
+    admin
+      .from("plan_credits")
+      .select("id, kind, credits_remaining, credits_granted, granted_at, stripe_session_id, active")
+      .eq("user_id", id)
+      .order("granted_at", { ascending: false })
+      .limit(20),
   ]);
 
   const downloads = downloadsRes.count ?? 0;
@@ -65,6 +71,10 @@ export default async function AdminUserDetailPage({ params }: { params: Params }
   const aiCv = aiCvRes.count ?? 0;
   const cvCount = cvCountRes.count ?? 0;
   const grants = grantsRes.data ?? [];
+  const packs = packsRes.data ?? [];
+  const activePackCredits = packs
+    .filter((p) => p.active && (p.credits_remaining as number) > 0)
+    .reduce((sum, p) => sum + (p.credits_remaining as number), 0);
 
   const downloadLimit = Number.isFinite(quota.downloadsPerMonth)
     ? quota.downloadsPerMonth
@@ -115,8 +125,60 @@ export default async function AdminUserDetailPage({ params }: { params: Params }
                 )}
               </Row>
               <Row label="Zapisanych CV">{cvCount}</Row>
+              <Row label="Pro Pack credits">
+                {activePackCredits > 0 ? (
+                  <span className="mono-label inline-flex rounded-full bg-[color:var(--saffron)]/25 px-2 py-0.5 text-[0.58rem] font-semibold">
+                    {activePackCredits} aktywnych
+                  </span>
+                ) : (
+                  <span className="text-[color:var(--ink-muted)]">brak</span>
+                )}
+              </Row>
             </dl>
           </section>
+
+          {packs.length > 0 ? (
+            <section className="rounded-2xl border border-[color:color-mix(in_oklab,var(--ink)_10%,transparent)] bg-white p-5 sm:p-6">
+              <h2 className="mb-4 font-display text-[1.125rem] font-bold tracking-tight">
+                Historia Pro Pack
+              </h2>
+              <ul className="divide-y divide-[color:color-mix(in_oklab,var(--ink)_8%,transparent)]">
+                {packs.map((p) => (
+                  <li key={p.id as string} className="flex flex-col gap-1 py-3">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <span className="text-[14px] font-medium">
+                        {p.credits_remaining}/{p.credits_granted}{" "}
+                        <span className="text-[color:var(--ink-muted)]">kredytów</span>
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`mono-label rounded-full px-2 py-0.5 text-[0.56rem] ${
+                            p.active
+                              ? "bg-[color:var(--jade)]/20 text-[color:var(--jade)]"
+                              : "bg-[color:var(--ink)]/10 text-[color:var(--ink-muted)]"
+                          }`}
+                        >
+                          {p.active ? "aktywny" : "nieaktywny"}
+                        </span>
+                        <time className="text-[11px] text-[color:var(--ink-muted)]">
+                          {new Date(p.granted_at as string).toLocaleDateString("pl-PL", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </time>
+                      </div>
+                    </div>
+                    {p.stripe_session_id ? (
+                      <p className="font-mono text-[11px] text-[color:var(--ink-muted)]">
+                        {(p.stripe_session_id as string).slice(0, 36)}…
+                      </p>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
 
           <section className="rounded-2xl border border-[color:color-mix(in_oklab,var(--ink)_10%,transparent)] bg-white p-5 sm:p-6">
             <h2 className="mb-4 font-display text-[1.125rem] font-bold tracking-tight">
