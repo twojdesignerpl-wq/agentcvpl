@@ -100,9 +100,9 @@ const PERSONAS: Persona[] = [
 ];
 
 const STATUS_MESSAGES = [
-  "Pracuś czyta Twoje doświadczenie…",
-  "Dopasowuje słowa pod ATS…",
-  "Redaguje opis stanowiska…",
+  "Pracuś czyta CV…",
+  "Dopasowuje słowa ATS…",
+  "Redaguje opis…",
   "Podświetla osiągnięcia…",
   "Finalizuje sekcję…",
 ];
@@ -225,8 +225,8 @@ export function LiveCvCanvas() {
         transition={{ delay: 0.6, duration: 0.8 }}
         className="absolute -top-3 left-4 z-20 flex max-w-[calc(100%-2rem)] items-center gap-2 rounded-full border border-[color:var(--ink)]/15 bg-[color:var(--cream)] px-3 py-1.5 shadow-[0_16px_32px_-20px_rgba(10,14,26,0.4)] sm:-top-4 sm:left-6 sm:px-4 sm:py-2"
       >
-        <span className="agent-dot" />
-        <span className="mono-label truncate text-[color:var(--ink)]">
+        <span className="agent-dot shrink-0" />
+        <span className="mono-label whitespace-nowrap text-[color:var(--ink)]">
           {STATUS_MESSAGES[statusIdx]}
         </span>
       </motion.div>
@@ -235,7 +235,7 @@ export function LiveCvCanvas() {
       <motion.div
         ref={canvasRef}
         style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-        className="relative aspect-[1/1.05] w-full overflow-hidden rounded-[2px] bg-[color:var(--cream-soft)] ring-ink grain sm:aspect-[1/1.1]"
+        className="relative min-h-[520px] w-full overflow-hidden rounded-[2px] bg-[color:var(--cream-soft)] ring-ink grain sm:aspect-[1/1.1] sm:min-h-0"
       >
         {/* Paper header ink stripe */}
         <div className="absolute left-0 right-0 top-0 h-1.5 bg-[color:var(--ink)]" />

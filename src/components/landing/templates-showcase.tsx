@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
 import type { TemplateItem } from "@/lib/landing/content";
@@ -450,7 +450,30 @@ function OrbitMock() {
 
 // ─── Layout ──────────────────────────────────────────────────────────────────
 
+const MOCK_DESIGN_WIDTH = 540;
+const MOCK_DESIGN_HEIGHT = Math.round((MOCK_DESIGN_WIDTH * 1123) / 794); // ~764
+
 function TemplatePreview({ id, active }: { id: TemplateId; active: boolean }) {
+  const frameRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    const el = frameRef.current;
+    if (!el) return;
+    const measure = () => {
+      const w = el.clientWidth;
+      if (w > 0) setScale(w / MOCK_DESIGN_WIDTH);
+    };
+    measure();
+    const obs = new ResizeObserver(measure);
+    obs.observe(el);
+    window.addEventListener("resize", measure);
+    return () => {
+      obs.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, []);
+
   return (
     <motion.div
       layout
@@ -464,10 +487,22 @@ function TemplatePreview({ id, active }: { id: TemplateId; active: boolean }) {
       className="relative mx-auto w-full max-w-full sm:max-w-[540px]"
     >
       <div
+        ref={frameRef}
         className="relative w-full overflow-hidden rounded-[2px] bg-white ring-ink shadow-[0_20px_60px_-30px_rgba(0,0,0,0.25)]"
         style={{ aspectRatio: "794 / 1123" }}
       >
-        <TemplateMockup id={id} />
+        {/* Mockup renderowany w fixed 540px design width i skalowany przez transform do
+            aktualnej szerokości kontenera. Zachowuje proporcje A4 i czytelność mocku. */}
+        <div
+          className="absolute left-0 top-0 origin-top-left"
+          style={{
+            width: MOCK_DESIGN_WIDTH,
+            height: MOCK_DESIGN_HEIGHT,
+            transform: `scale(${scale})`,
+          }}
+        >
+          <TemplateMockup id={id} />
+        </div>
       </div>
     </motion.div>
   );
