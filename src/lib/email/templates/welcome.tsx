@@ -1,79 +1,123 @@
-import { Heading, Link, Text } from "@react-email/components";
-import { BRAND, ctaButtonStyle, EmailLayout } from "./_layout";
+import { Heading, Section, Text } from "@react-email/components";
+import { BRAND, CtaButton, EmailLayout, FeatureRow, FONT } from "./_layout";
 
 type Props = { name: string };
 
 export function WelcomeEmail({ name }: Props) {
   return (
-    <EmailLayout preview={`${name}, Pracuś gotowy do pracy nad Twoim CV`}>
+    <EmailLayout
+      preview={`${name}, Pracuś gotowy do pracy nad Twoim CV · agentcv.pl`}
+      eyebrow="01 / Witaj"
+    >
       <Heading
         as="h1"
         style={{
-          fontSize: 26,
-          lineHeight: 1.2,
-          margin: "0 0 16px",
-          color: BRAND.INK,
-          letterSpacing: "-0.02em",
+          margin: "0 0 14px",
+          fontFamily: FONT.SERIF,
           fontWeight: 700,
+          fontSize: 32,
+          lineHeight: 1.15,
+          letterSpacing: "-0.015em",
+          color: BRAND.INK,
         }}
       >
-        Cześć {name} — Pracuś gotowy do pracy
+        Cześć{" "}
+        <span
+          style={{
+            fontFamily: FONT.SERIF,
+            fontStyle: "italic",
+            color: BRAND.SAFFRON,
+            fontWeight: 700,
+          }}
+        >
+          {name}
+        </span>
+        , tu Pracuś
       </Heading>
 
-      <Text style={{ fontSize: 15, lineHeight: 1.6, color: BRAND.INK_SOFT, margin: "0 0 12px" }}>
-        Witaj w <strong>agentcv</strong>. Jestem Pracuś — 15 lat rekrutacji, polskie realia,
-        zero korpo-żargonu. Pomogę Ci napisać CV, na które recruiter odpisze.
-      </Text>
-
-      <Text style={{ fontSize: 15, lineHeight: 1.6, color: BRAND.INK_SOFT, margin: "0 0 24px" }}>
-        Co możesz zrobić teraz:
-      </Text>
-
       <Text
         style={{
-          fontSize: 14,
-          lineHeight: 1.7,
+          margin: "0 0 18px",
+          fontFamily: FONT.BODY,
+          fontSize: 15.5,
+          lineHeight: 1.65,
           color: BRAND.INK_SOFT,
-          margin: "0 0 8px",
-          paddingLeft: 16,
         }}
       >
-        • Otwórz kreator i wybierz jeden z 5 szablonów pod ATS
-        <br />• Wklej ogłoszenie o pracę — dopasuję CV do wymagań
-        <br />• Pobierz PDF albo DOCX — wszystko zgodne z RODO
+        15 lat rekrutacji w polskich realiach. Czytam ogłoszenia, znam ATS,
+        nie lubię korpo-żargonu. Pomogę Ci napisać CV, na które recruiter
+        faktycznie odpowie — konkretnie, bez ściemy.
       </Text>
 
-      <Text
+      <Section
         style={{
-          fontSize: 14,
-          lineHeight: 1.6,
-          color: BRAND.INK_MUTED,
-          margin: "0 0 28px",
-          padding: "12px 16px",
-          backgroundColor: `${BRAND.SAFFRON}22`,
-          borderRadius: 10,
-          borderLeft: `3px solid ${BRAND.SAFFRON}`,
+          backgroundColor: BRAND.CREAM_SOFT,
+          borderRadius: 12,
+          padding: "20px 22px",
+          margin: "0 0 24px",
+          border: `1px solid ${BRAND.BORDER_SOFT}`,
         }}
       >
-        Pierwsze CV jest za darmo — bez karty, bez zobowiązań.
-      </Text>
+        <Text
+          style={{
+            margin: "0 0 14px",
+            fontFamily: FONT.MONO,
+            fontSize: 10.5,
+            color: BRAND.INK_MUTED,
+            letterSpacing: "0.18em",
+            textTransform: "uppercase",
+            fontWeight: 500,
+          }}
+        >
+          Pierwsze trzy kroki
+        </Text>
+        <FeatureRow>
+          <strong style={{ color: BRAND.INK }}>Wybierz szablon</strong> — 5 układów pod
+          ATS, każdy sprawdzony przez prawdziwe systemy rekrutacyjne.
+        </FeatureRow>
+        <FeatureRow>
+          <strong style={{ color: BRAND.INK }}>Wklej ogłoszenie</strong> — dopasuję słowa
+          klucze i pokażę live ATS score z 4 wymiarami.
+        </FeatureRow>
+        <FeatureRow>
+          <strong style={{ color: BRAND.INK }}>Pobierz PDF lub DOCX</strong> — formaty
+          zgodne z RODO, wysyłasz od razu do rekrutera.
+        </FeatureRow>
+      </Section>
 
-      <div style={{ textAlign: "center" as const, margin: "0 0 8px" }}>
-        <Link href={`${BRAND.URL}/kreator`} style={ctaButtonStyle}>
-          Otwórz kreator →
-        </Link>
+      <div style={{ textAlign: "center", margin: "0 0 20px" }}>
+        <CtaButton href={`${BRAND.URL}/kreator`} label="Otwórz kreator" />
       </div>
 
       <Text
         style={{
-          fontSize: 12,
-          lineHeight: 1.5,
+          margin: 0,
+          fontFamily: FONT.BODY,
+          fontSize: 13,
+          lineHeight: 1.6,
           color: BRAND.INK_MUTED,
-          margin: "24px 0 0",
-          textAlign: "center" as const,
+          textAlign: "center",
         }}
       >
-        Gdy będziesz gotowy na więcej — plany Pro i Unlimited odblokują pełnego Pracusia.
+        Pierwsze CV — za darmo. Bez karty, bez zobowiązań.
+      </Text>
+
+      <Text
+        style={{
+          margin: "20px 0 0",
+          padding: "14px 18px",
+          fontFamily: FONT.SERIF,
+          fontStyle: "italic",
+          fontSize: 14,
+          lineHeight: 1.55,
+          color: BRAND.INK_SOFT,
+          borderLeft: `3px solid ${BRAND.JADE}`,
+          backgroundColor: `${BRAND.JADE_SOFT}22`,
+          borderRadius: "0 10px 10px 0",
+        }}
+      >
+        Jak utkniesz — pisz do mnie w czacie w kreatorze.
+        Jestem po polsku, konkretnie i bez ściemy.
       </Text>
     </EmailLayout>
   );

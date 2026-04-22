@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light only">
+  <meta name="supported-color-schemes" content="light only">
+  <title>Potwierdź zmianę e-maila w agentcv</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Manrope:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,700;1,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; padding: 0; background: #EDE2D0; }
+    @media (max-width: 600px) {
+      .container { padding: 20px 12px !important; }
+      .card { padding: 28px 22px !important; }
+      .h1 { font-size: 26px !important; }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;background:#EDE2D0;font-family:'Manrope','Helvetica Neue',Arial,sans-serif;color:#0A0E1A;-webkit-font-smoothing:antialiased;">
+
+<div class="container" style="max-width:600px;margin:0 auto;padding:32px 20px;">
+
+  <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin-bottom:20px;">
+    <tr>
+      <td style="width:44px;vertical-align:middle;">
+        <a href="https://agentcv.pl" style="text-decoration:none;">
+          <img src="https://agentcv.pl/brand/pracus/ikona-1.png" width="44" height="44" alt="Pracuś AI" style="display:block;border-radius:10px;border:1px solid #E5DCC9;">
+        </a>
+      </td>
+      <td style="padding-left:14px;vertical-align:middle;">
+        <a href="https://agentcv.pl" style="text-decoration:none;color:#0A0E1A;">
+          <div style="font-family:'Syne','Helvetica Neue',Arial,sans-serif;font-weight:700;font-size:22px;letter-spacing:-0.015em;line-height:1;color:#0A0E1A;">agentcv</div>
+          <div style="margin-top:4px;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10px;color:#E08E3C;letter-spacing:0.2em;text-transform:uppercase;font-weight:500;line-height:1;">Pracuś · AI · PL</div>
+        </a>
+      </td>
+    </tr>
+  </table>
+
+  <div class="card" style="background:#F5F1E8;border-radius:18px;padding:40px 32px;border:1px solid #E5DCC9;">
+
+    <div style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;color:#E08E3C;letter-spacing:0.2em;text-transform:uppercase;font-weight:500;margin-bottom:20px;">
+      Zmiana e-maila
+    </div>
+
+    <h1 class="h1" style="margin:0 0 14px;font-family:'Playfair Display',Georgia,serif;font-weight:700;font-size:30px;line-height:1.15;letter-spacing:-0.015em;color:#0A0E1A;">
+      Potwierdź <span style="font-style:italic;color:#E08E3C;">nowy adres</span>
+    </h1>
+
+    <p style="margin:0 0 20px;font-family:'Manrope','Helvetica Neue',Arial,sans-serif;font-size:15.5px;line-height:1.65;color:#2B2F3D;">
+      Dostałem prośbę o zmianę adresu e-mail na Twoim koncie w agentcv. Kliknij przycisk, żeby zakończyć zmianę. Od tego momentu będziesz logować się z nowego adresu.
+    </p>
+
+    <!-- Change visualization -->
+    <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 24px;background:#F2EADB;border-radius:12px;border:1px solid #E5DCC9;">
+      <tr>
+        <td style="padding:14px 18px;">
+          <div style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:9.5px;color:#5A607A;letter-spacing:0.18em;text-transform:uppercase;font-weight:500;margin-bottom:4px;">Stary</div>
+          <div style="font-family:'Manrope','Helvetica Neue',Arial,sans-serif;font-size:14px;color:#2B2F3D;word-break:break-all;">{{ .Email }}</div>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 18px 4px;text-align:center;">
+          <div style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:14px;color:#E08E3C;letter-spacing:0.1em;">↓</div>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:4px 18px 14px;">
+          <div style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:9.5px;color:#5A607A;letter-spacing:0.18em;text-transform:uppercase;font-weight:500;margin-bottom:4px;">Nowy</div>
+          <div style="font-family:'Manrope','Helvetica Neue',Arial,sans-serif;font-size:14px;color:#0A0E1A;font-weight:600;word-break:break-all;">{{ .NewEmail }}</div>
+        </td>
+      </tr>
+    </table>
+
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 20px;">
+      <tr>
+        <td style="background:#0A0E1A;border-radius:999px;padding:14px 32px;">
+          <a href="{{ .ConfirmationURL }}" style="color:#F5F1E8;font-family:'Manrope','Helvetica Neue',Arial,sans-serif;font-size:15px;font-weight:600;text-decoration:none;letter-spacing:-0.005em;display:inline-block;line-height:1;">
+            Potwierdź zmianę
+          </a>
+        </td>
+      </tr>
+    </table>
+
+    <div style="margin-top:20px;padding:16px 20px;background:#B84A2E0D;border-radius:12px;border:1px solid #B84A2E33;">
+      <p style="margin:0 0 4px;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10px;color:#B84A2E;letter-spacing:0.18em;text-transform:uppercase;font-weight:500;">
+        Nie zmieniałeś e-maila?
+      </p>
+      <p style="margin:0;font-family:'Manrope','Helvetica Neue',Arial,sans-serif;font-size:13px;line-height:1.55;color:#2B2F3D;">
+        Zignoruj tego maila i od razu zmień hasło w ustawieniach konta. Napisz też do nas na <a href="mailto:hej@agentcv.pl" style="color:#2B2F3D;text-decoration:underline;">hej@agentcv.pl</a> — sprawdzimy co się stało.
+      </p>
+    </div>
+
+    <p style="margin:22px 0 0;font-family:'Manrope','Helvetica Neue',Arial,sans-serif;font-size:12px;line-height:1.55;color:#5A607A;word-break:break-all;">
+      Przycisk nie działa? Skopiuj ten link:<br>
+      <a href="{{ .ConfirmationURL }}" style="color:#2B2F3D;text-decoration:underline;word-break:break-all;">{{ .ConfirmationURL }}</a>
+    </p>
+  </div>
+
+  <div style="padding:24px 4px 0;">
+    <p style="margin:0;font-family:'Playfair Display',Georgia,serif;font-style:italic;font-size:15px;color:#2B2F3D;line-height:1.4;">— Pracuś</p>
+    <p style="margin:2px 0 0;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10px;color:#5A607A;letter-spacing:0.14em;text-transform:uppercase;font-weight:500;">AI od polskiego rynku pracy</p>
+  </div>
+
+  <hr style="border:none;border-top:1px solid #0A0E1A18;margin:28px 0 18px;">
+
+  <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;">
+    <tr>
+      <td style="vertical-align:top;">
+        <p style="margin:0;font-family:'Manrope','Helvetica Neue',Arial,sans-serif;font-size:12.5px;color:#5A607A;line-height:1.6;">
+          <strong style="color:#2B2F3D;">agentcv.pl</strong> — kreator CV z Pracusiem AI.
+        </p>
+      </td>
+      <td style="vertical-align:top;text-align:right;width:130px;">
+        <a href="https://agentcv.pl/regulamin" style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10px;color:#5A607A;text-decoration:none;letter-spacing:0.14em;text-transform:uppercase;display:block;margin-bottom:4px;">Regulamin</a>
+        <a href="https://agentcv.pl/polityka-prywatnosci" style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10px;color:#5A607A;text-decoration:none;letter-spacing:0.14em;text-transform:uppercase;display:block;">Prywatność</a>
+      </td>
+    </tr>
+  </table>
+
+  <p style="margin:18px 0 0;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:9.5px;color:#5A607A;letter-spacing:0.1em;line-height:1.5;">
+    Wiadomość automatyczna · potwierdzenie wymagane na nowym adresie.
+  </p>
+</div>
+
+</body>
+</html>

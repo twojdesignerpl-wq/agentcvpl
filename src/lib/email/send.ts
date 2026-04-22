@@ -71,11 +71,12 @@ export async function sendPaymentConfirmation(
   user: { id: string; email: string },
   plan: "pro" | "unlimited",
   amount: string,
+  invoiceUrl?: string,
 ): Promise<DispatchResult> {
   if (!isResendConfigured()) return { ok: false, error: "resend_not_configured" };
   try {
     const resend = getResendClient();
-    const html = await render(PaymentConfirmationEmail({ plan, amount }));
+    const html = await render(PaymentConfirmationEmail({ plan, amount, invoiceUrl }));
     const { data, error } = await resend.emails.send({
       from: EMAIL_FROM,
       to: user.email,
