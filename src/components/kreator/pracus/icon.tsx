@@ -30,7 +30,8 @@ export function PracusMark({
 }: Props) {
   const reduced = useReducedMotion();
 
-  // Mini variant — prosty, czytelny <24px (navigation, FAB mini badge).
+  // Mini variant — rozpoznawalny Pracuś AI w małych rozmiarach (22–28px).
+  // Zachowuje 2 saffron gogle (signature) + grot pióra — pomija antenę (za cienka w 22px).
   if (variant === "mini") {
     return (
       <svg
@@ -42,24 +43,35 @@ export function PracusMark({
         role="img"
         aria-label="Pracuś AI"
       >
-        {/* Głowa — zaokrąglony prostokąt ink kontur na cream tle */}
+        {/* Głowa — zaokrąglony prostokąt na cream tle */}
         <rect
-          x="3.2"
-          y="4.4"
-          width="17.6"
-          height="14.4"
-          rx="5.2"
+          x="2.4"
+          y="3.6"
+          width="19.2"
+          height="11.6"
+          rx="3.6"
           fill="var(--cream)"
           stroke="var(--ink)"
-          strokeWidth="1.6"
+          strokeWidth="1.5"
         />
-        {/* Antena — pojedyncza kropka na czubku */}
-        <circle cx="12" cy="3.2" r="1.2" fill="var(--saffron)" stroke="var(--ink)" strokeWidth="0.8" />
-        {/* Jedno oko/gogle saffron centrowane — czytelne nawet w 16px */}
-        <circle cx="12" cy="11.6" r="3.4" fill="var(--saffron)" stroke="var(--ink)" strokeWidth="1.2" />
-        <circle cx="12" cy="11.6" r="1.2" fill="var(--ink)" />
+        {/* Uszy — saffron kropki po bokach */}
+        <circle cx="1.8" cy="9.4" r="1" fill="var(--saffron)" stroke="var(--ink)" strokeWidth="0.7" />
+        <circle cx="22.2" cy="9.4" r="1" fill="var(--saffron)" stroke="var(--ink)" strokeWidth="0.7" />
+        {/* Gogle AI — dwa saffron okręgi (signature) */}
+        <circle cx="8.4" cy="9.4" r="2.1" fill="var(--saffron)" stroke="var(--ink)" strokeWidth="1.1" />
+        <circle cx="15.6" cy="9.4" r="2.1" fill="var(--saffron)" stroke="var(--ink)" strokeWidth="1.1" />
+        {/* Bridge między goglami */}
+        <rect x="10.3" y="8.9" width="3.4" height="1" rx="0.5" fill="var(--saffron)" stroke="var(--ink)" strokeWidth="0.6" />
+        {/* Grot pióra pod głową — trójkąt saffron */}
+        <path
+          d="M 8.6 15.6 L 15.4 15.6 L 12 21.4 Z"
+          fill="var(--saffron)"
+          stroke="var(--ink)"
+          strokeWidth="1"
+          strokeLinejoin="round"
+        />
         {online ? (
-          <circle cx="19.6" cy="19.2" r="2" fill="var(--saffron)" stroke="var(--ink)" strokeWidth="1" />
+          <circle cx="20.8" cy="20.4" r="2.1" fill="var(--saffron)" stroke="var(--ink)" strokeWidth="1" />
         ) : null}
       </svg>
     );

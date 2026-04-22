@@ -7,7 +7,13 @@ import { useCVStore } from "@/lib/cv/store";
 import { calculateAtsScore, scoreLevelLabel, type AtsFlag } from "@/lib/ai/ats-score";
 import { INDUSTRY_PROFILES } from "@/lib/ai/knowledge-base";
 
-export function AtsGauge({ onAskPracus }: { onAskPracus: (prompt: string) => void }) {
+export function AtsGauge({
+  onAskPracus,
+  compact = false,
+}: {
+  onAskPracus: (prompt: string) => void;
+  compact?: boolean;
+}) {
   const cv = useCVStore((s) => s.cv);
   const [open, setOpen] = useState(false);
 
@@ -22,24 +28,40 @@ export function AtsGauge({ onAskPracus }: { onAskPracus: (prompt: string) => voi
         whileHover={{ scale: 1.03 }}
         whileTap={{ scale: 0.97 }}
         transition={{ type: "spring", stiffness: 420, damping: 26 }}
-        className="group relative flex items-center gap-3 rounded-2xl border border-ink/10 bg-gradient-to-br from-cream-soft to-cream px-3.5 py-2.5 text-left shadow-[0_4px_16px_-10px_rgba(10,14,26,0.18)] hover:border-saffron/40 hover:shadow-[0_8px_24px_-12px_rgba(10,14,26,0.22)] transition-[box-shadow,border-color,transform] cursor-pointer"
+        className={
+          compact
+            ? "group relative flex w-full items-center gap-2.5 rounded-xl border border-ink/10 bg-gradient-to-br from-cream-soft to-cream px-3 py-2 text-left shadow-[0_2px_8px_-6px_rgba(10,14,26,0.18)] transition-[box-shadow,border-color,transform] hover:border-saffron/40 hover:shadow-[0_6px_16px_-10px_rgba(10,14,26,0.22)]"
+            : "group relative flex items-center gap-3 rounded-2xl border border-ink/10 bg-gradient-to-br from-cream-soft to-cream px-3.5 py-2.5 text-left shadow-[0_4px_16px_-10px_rgba(10,14,26,0.18)] transition-[box-shadow,border-color,transform] hover:border-saffron/40 hover:shadow-[0_8px_24px_-12px_rgba(10,14,26,0.22)]"
+        }
         aria-label={`ATS score ${score.overall} / 100 — ${label}. Kliknij aby zobaczyć analizę.`}
       >
-        <Ring value={score.overall} color={color} size={44} />
-        <div className="flex flex-col">
-          <span className="text-[10.5px] uppercase tracking-[0.16em] font-semibold text-ink-muted leading-none">
+        <Ring value={score.overall} color={color} size={compact ? 34 : 44} />
+        <div className="flex min-w-0 flex-col">
+          <span className="text-[10px] font-semibold uppercase leading-none tracking-[0.16em] text-ink-muted sm:text-[10.5px]">
             ATS Score
           </span>
-          <span className="font-heading text-[17px] font-semibold text-ink leading-tight mt-1 tracking-[-0.01em]">
+          <span
+            className={
+              compact
+                ? "mt-0.5 truncate font-heading text-[14px] font-semibold leading-tight tracking-[-0.01em] text-ink"
+                : "mt-1 font-heading text-[17px] font-semibold leading-tight tracking-[-0.01em] text-ink"
+            }
+          >
             {label}
           </span>
         </div>
-        <Sparkle
-          size={14}
-          weight="fill"
-          className="absolute top-2 right-2 text-saffron/60 opacity-0 group-hover:opacity-100 transition-opacity"
-          aria-hidden
-        />
+        {compact ? (
+          <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full bg-[color:color-mix(in_oklab,var(--ink)_5%,transparent)] px-2 py-0.5 text-[10.5px] font-semibold tabular-nums text-ink-muted">
+            {score.overall}/100
+          </span>
+        ) : (
+          <Sparkle
+            size={14}
+            weight="fill"
+            className="absolute top-2 right-2 text-saffron/60 opacity-0 transition-opacity group-hover:opacity-100"
+            aria-hidden
+          />
+        )}
       </motion.button>
 
       <AnimatePresence>

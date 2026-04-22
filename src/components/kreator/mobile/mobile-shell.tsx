@@ -147,7 +147,7 @@ export function MobileKreatorShell() {
         {activeTab === "editor" ? <MobileTabEditor /> : null}
         {activeTab === "style" ? <MobileTabStyle /> : null}
         {activeTab === "ai" ? (
-          <div className="flex h-[calc(100dvh-3rem-4rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] flex-col">
+          <div className="flex h-[calc(100dvh-var(--mobile-top-h,3rem)-var(--bottom-nav-h,4rem)-env(safe-area-inset-top)-env(safe-area-inset-bottom))] flex-col">
             <MobileTabAI />
           </div>
         ) : null}

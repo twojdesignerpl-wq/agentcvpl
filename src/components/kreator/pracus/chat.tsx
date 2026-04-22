@@ -225,14 +225,17 @@ export const PracusChat = forwardRef<PracusChatHandle>(function PracusChat(_, re
         </div>
       </ScrollArea>
 
-      <div className="relative border-t border-ink/8 bg-[color-mix(in_oklab,var(--cream)_92%,black_2%)] px-5 py-4 flex flex-col gap-3">
+      <div
+        className="relative flex flex-col gap-2.5 border-t border-ink/8 bg-[color-mix(in_oklab,var(--cream)_92%,black_2%)] px-4 py-3 sm:gap-3 sm:px-5 sm:py-4"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)" }}
+      >
         {!hasJobContext ? (
           <button
             type="button"
             onClick={() => setJobDialogOpen(true)}
-            className="self-start inline-flex items-center gap-2 rounded-full border border-ink/10 bg-cream px-4 py-2 text-[13.5px] font-medium text-ink hover:border-saffron hover:bg-saffron/10 shadow-[0_2px_8px_-4px_rgba(10,14,26,0.08)] transition-colors"
+            className="self-start inline-flex items-center gap-1.5 rounded-full border border-ink/10 bg-cream px-3 py-1.5 text-[12.5px] font-medium text-ink shadow-[0_2px_8px_-4px_rgba(10,14,26,0.08)] transition-colors hover:border-saffron hover:bg-saffron/10 sm:gap-2 sm:px-4 sm:py-2 sm:text-[13.5px]"
           >
-            <Target size={15} weight="duotone" className="text-ink-muted" />
+            <Target size={13} weight="duotone" className="text-ink-muted" />
             Wklej ogłoszenie
           </button>
         ) : null}
@@ -245,10 +248,13 @@ export const PracusChat = forwardRef<PracusChatHandle>(function PracusChat(_, re
           disabled={isStreaming}
           isStreaming={isStreaming}
         />
-        <p className="text-[11.5px] font-medium text-ink-muted/80 leading-tight">
+        <p className="hidden text-[11.5px] font-medium leading-tight text-ink-muted/80 sm:block">
           <kbd className="px-1.5 py-0.5 rounded bg-ink/6 font-mono text-[10.5px]">Enter</kbd> = wyślij ·
           <kbd className="px-1.5 py-0.5 rounded bg-ink/6 font-mono text-[10.5px] ml-1">Shift</kbd>+
           <kbd className="px-1.5 py-0.5 rounded bg-ink/6 font-mono text-[10.5px]">Enter</kbd> = nowy wiersz · limit 10 wiadomości/min
+        </p>
+        <p className="block text-[10.5px] font-medium leading-tight text-ink-muted/70 sm:hidden">
+          Limit: 10 wiadomości/min
         </p>
       </div>
 

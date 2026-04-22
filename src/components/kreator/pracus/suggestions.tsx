@@ -149,7 +149,7 @@ export function Suggestions({ onPick, compact, overflowed, hasJobContext }: Prop
   const actions = useDynamicQuickActions({ overflowed, hasJobContext });
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="hide-scrollbar -mx-1 flex snap-x gap-2 overflow-x-auto px-1 sm:flex-wrap sm:overflow-x-visible">
       {actions.map(({ id, label, prompt, Icon, priority }) => (
         <motion.button
           key={id}
@@ -160,14 +160,14 @@ export function Suggestions({ onPick, compact, overflowed, hasJobContext }: Prop
           transition={{ type: "spring", stiffness: 420, damping: 26 }}
           className={
             priority === "hot"
-              ? "group inline-flex items-center gap-2 rounded-full border border-rust/40 bg-[color-mix(in_oklab,var(--rust)_8%,var(--cream))] px-4 py-2 text-[13.5px] font-medium text-ink hover:border-rust hover:bg-[color-mix(in_oklab,var(--rust)_14%,var(--cream))] shadow-[0_2px_8px_-4px_rgba(10,14,26,0.08)] hover:shadow-[0_4px_14px_-6px_rgba(10,14,26,0.16)] transition-[box-shadow,border-color,background-color]"
+              ? "group inline-flex shrink-0 snap-start items-center gap-1.5 whitespace-nowrap rounded-full border border-rust/40 bg-[color-mix(in_oklab,var(--rust)_8%,var(--cream))] px-3 py-1.5 text-[12.5px] font-medium text-ink shadow-[0_2px_8px_-4px_rgba(10,14,26,0.08)] transition-[box-shadow,border-color,background-color] hover:border-rust hover:bg-[color-mix(in_oklab,var(--rust)_14%,var(--cream))] hover:shadow-[0_4px_14px_-6px_rgba(10,14,26,0.16)] sm:gap-2 sm:px-4 sm:py-2 sm:text-[13.5px]"
               : compact
-                ? "group inline-flex items-center gap-2 rounded-full border border-ink/10 bg-cream px-3.5 py-2 text-[13px] font-medium text-ink hover:border-saffron hover:bg-saffron/8 shadow-[0_1px_4px_-2px_rgba(10,14,26,0.06)] hover:shadow-[0_3px_10px_-4px_rgba(10,14,26,0.14)] transition-[box-shadow,border-color,background-color]"
-                : "group inline-flex items-center gap-2 rounded-full border border-ink/10 bg-cream px-4 py-2 text-[13.5px] font-medium text-ink hover:border-saffron hover:bg-saffron/8 shadow-[0_2px_8px_-4px_rgba(10,14,26,0.08)] hover:shadow-[0_4px_14px_-6px_rgba(10,14,26,0.16)] transition-[box-shadow,border-color,background-color]"
+                ? "group inline-flex shrink-0 snap-start items-center gap-1.5 whitespace-nowrap rounded-full border border-ink/10 bg-cream px-3 py-1.5 text-[12.5px] font-medium text-ink shadow-[0_1px_4px_-2px_rgba(10,14,26,0.06)] transition-[box-shadow,border-color,background-color] hover:border-saffron hover:bg-saffron/8 hover:shadow-[0_3px_10px_-4px_rgba(10,14,26,0.14)] sm:gap-2 sm:px-3.5 sm:py-2 sm:text-[13px]"
+                : "group inline-flex shrink-0 snap-start items-center gap-1.5 whitespace-nowrap rounded-full border border-ink/10 bg-cream px-3 py-1.5 text-[12.5px] font-medium text-ink shadow-[0_2px_8px_-4px_rgba(10,14,26,0.08)] transition-[box-shadow,border-color,background-color] hover:border-saffron hover:bg-saffron/8 hover:shadow-[0_4px_14px_-6px_rgba(10,14,26,0.16)] sm:gap-2 sm:px-4 sm:py-2 sm:text-[13.5px]"
           }
         >
           <Icon
-            size={compact ? 14 : 16}
+            size={compact ? 13 : 14}
             weight="duotone"
             className={
               priority === "hot"
@@ -198,25 +198,26 @@ export function WelcomeCard({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-      className="relative flex flex-col items-start gap-5 rounded-3xl border border-ink/8 bg-gradient-to-br from-cream-soft via-cream to-cream-soft p-5 shadow-[0_10px_40px_-20px_rgba(10,14,26,0.18)] overflow-hidden"
+      className="relative flex flex-col items-start gap-3.5 overflow-hidden rounded-3xl border border-ink/8 bg-gradient-to-br from-cream-soft via-cream to-cream-soft p-4 shadow-[0_10px_40px_-20px_rgba(10,14,26,0.18)] sm:gap-5 sm:p-5"
     >
       <span
         aria-hidden
         className="pointer-events-none absolute -top-20 -right-16 size-52 rounded-full bg-[radial-gradient(circle,color-mix(in_oklab,var(--saffron)_22%,transparent)_0%,transparent_70%)] blur-xl"
       />
-      <div className="relative flex items-center gap-4">
-        <PracusMark size={48} online />
-        <div className="flex flex-col">
-          <p className="font-heading text-[22px] font-semibold text-ink leading-[1.1] tracking-[-0.015em]">
+      <div className="relative flex items-center gap-3 sm:gap-4">
+        <PracusMark size={40} online className="shrink-0 sm:hidden" />
+        <PracusMark size={48} online className="hidden shrink-0 sm:block" />
+        <div className="flex min-w-0 flex-col">
+          <p className="font-heading text-[clamp(1.1rem,5vw,1.375rem)] font-semibold leading-[1.1] tracking-[-0.015em] text-ink">
             Cześć, jestem <span className="text-[color:var(--saffron)]">Pracuś</span>.
           </p>
-          <p className="text-[13px] font-medium text-ink-muted mt-1">
+          <p className="mt-0.5 text-[12px] font-medium text-ink-muted sm:text-[13px]">
             15 lat rekrutacji · polski rynek pracy
           </p>
         </div>
       </div>
 
-      <p className="relative text-[15px] text-ink-soft leading-relaxed font-medium">
+      <p className="relative text-[13.5px] font-medium leading-relaxed text-ink-soft sm:text-[15px]">
         Pomogę Ci napisać CV, które dostaje rozmowy. Proponuję konkretne zmiany — ty decydujesz,
         czy zastosować.
       </p>
@@ -229,30 +230,29 @@ export function WelcomeCard({
           whileHover={{ y: -1 }}
           whileTap={{ scale: 0.98 }}
           transition={{ type: "spring", stiffness: 420, damping: 26 }}
-          className="relative w-full rounded-2xl border-2 border-dashed border-saffron/50 bg-saffron/8 hover:bg-saffron/12 hover:border-saffron transition-colors px-4 py-3.5 flex items-start gap-3 text-left shadow-[0_2px_8px_-4px_rgba(10,14,26,0.08)]"
+          className="relative flex w-full items-start gap-2.5 rounded-2xl border-2 border-dashed border-saffron/50 bg-saffron/8 px-3 py-3 text-left shadow-[0_2px_8px_-4px_rgba(10,14,26,0.08)] transition-colors hover:border-saffron hover:bg-saffron/12 sm:gap-3 sm:px-4 sm:py-3.5"
         >
-          <Target size={22} weight="duotone" className="text-[color:var(--saffron)] shrink-0 mt-0.5" />
-          <div className="flex flex-col gap-1.5 min-w-0">
-            <span className="font-heading text-[15px] font-semibold text-ink leading-tight tracking-[-0.01em]">
+          <Target size={18} weight="duotone" className="mt-0.5 shrink-0 text-[color:var(--saffron)] sm:size-[22px]" />
+          <div className="flex min-w-0 flex-col gap-1 sm:gap-1.5">
+            <span className="flex flex-wrap items-center gap-1.5 font-heading text-[14px] font-semibold leading-tight tracking-[-0.01em] text-ink sm:text-[15px]">
               Wklej ogłoszenie pracy
-              <span className="ml-2 inline-flex items-center rounded-full bg-saffron/25 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-ink align-middle">
+              <span className="inline-flex items-center rounded-full bg-saffron/25 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-ink sm:px-2 sm:text-[10px]">
                 zalecane
               </span>
             </span>
-            <span className="text-[13px] text-ink-muted leading-snug font-medium">
-              Działam najlepiej gdy znam Twoje docelowe ogłoszenie — dopasuję słowa kluczowe ATS,
-              wskażę braki i zaproponuję konkretne zmiany. Wklej treść ogłoszenia{" "}
-              <strong className="text-ink font-semibold">lub link</strong>.
+            <span className="text-[12px] font-medium leading-snug text-ink-muted sm:text-[13px]">
+              Dopasuję słowa kluczowe ATS i wskażę braki. Wklej treść ogłoszenia{" "}
+              <strong className="font-semibold text-ink">lub link</strong>.
             </span>
           </div>
         </motion.button>
       ) : null}
 
-      <p className="relative text-[12.5px] font-medium text-ink-muted uppercase tracking-[0.08em]">
+      <p className="relative text-[11px] font-medium uppercase tracking-[0.08em] text-ink-muted sm:text-[12.5px]">
         {hasJobContext ? "Albo od razu wybierz" : "Możesz też zacząć od"}
       </p>
 
-      <div className="relative">
+      <div className="relative -mx-4 w-[calc(100%+2rem)] px-4 sm:mx-0 sm:w-full sm:px-0">
         <Suggestions onPick={onPick} overflowed={overflowed} hasJobContext={hasJobContext} />
       </div>
     </motion.div>

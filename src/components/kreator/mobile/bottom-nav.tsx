@@ -24,9 +24,9 @@ const ITEMS: readonly NavItem[] = [
     renderIcon: (active) => (
       <PracusMark
         variant="mini"
-        size={22}
+        size={26}
         online={active}
-        className={cn("transition-transform duration-200", active ? "scale-[1.06]" : "scale-100")}
+        className={cn("transition-transform duration-200", active ? "scale-[1.08]" : "scale-100")}
       />
     ),
   },
