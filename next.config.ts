@@ -60,6 +60,16 @@ const kreatorHeaders = [
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ["puppeteer-core", "@sparticuz/chromium"],
+  // @sparticuz/chromium loads brotli-compressed Chromium binaries dynamically from
+  // node_modules/@sparticuz/chromium/bin/*.br — Next.js File Tracing nie wykrywa
+  // tego dynamicznego dostępu, więc trzeba jawnie powiedzieć aby skopiowało pliki
+  // do deploymentu (bez tego /api/pdf dostaje "input directory does not exist").
+  outputFileTracingIncludes: {
+    "/api/pdf": [
+      "./node_modules/@sparticuz/chromium/bin/**/*",
+      "./node_modules/@sparticuz/chromium/build/**/*",
+    ],
+  },
   poweredByHeader: false,
   reactStrictMode: true,
   images: {
