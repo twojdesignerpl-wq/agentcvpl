@@ -66,6 +66,53 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   // Robimy to zawsze — nie tylko dla /api — bo Server Components też potrzebują aktualnego tokenu.
   const supabaseResponse = await updateSupabaseSession(req);
 
+  // Catch-all: jeśli Supabase kieruje user'a na DOWOLNĄ stronę z ?code=xxx
+  // (bo Site URL w Supabase Dashboard = apex/landing zamiast /auth/callback),
+  // przechwyć i odeślij do naszego callback route handlera, który server-side
+  // wymienia kod na session cookies. Bez tego landing (Server Component) nigdy
+  // nie wykonuje exchangeCodeForSession → pętla logowania.
+  const oauthCode = req.nextUrl.searchParams.get("code");
+  if (
+    oauthCode &&
+    !path.startsWith("/api/") &&
+    !path.startsWith("/_next/") &&
+    !path.startsWith("/auth/")
+  ) {
+    const callbackUrl = new URL("/auth/callback", req.url);
+    callbackUrl.searchParams.set("code", oauthCode);
+    const authNext = req.cookies.get("auth_next")?.value;
+    if (authNext) {
+      const decoded = decodeURIComponent(authNext);
+      if (decoded.startsWith("/") && !decoded.startsWith("//")) {
+        callbackUrl.searchParams.set("next", decoded);
+      }
+    }
+    const redirect = NextResponse.redirect(callbackUrl);
+    // Zachowaj cookies ustawione w updateSupabaseSession (np. odświeżone tokens).
+    supabaseResponse.cookies.getAll().forEach((c) =>
+      redirect.cookies.set(
+        c.name,
+        c.value,
+        c as unknown as Parameters<typeof redirect.cookies.set>[2],
+      ),
+    );
+    return redirect;
+  }
+
+  // Catch-all: Supabase error (expired magic link, cancelled OAuth) → /zaloguj.
+  const oauthError = req.nextUrl.searchParams.get("error_description");
+  if (
+    oauthError &&
+    !path.startsWith("/api/") &&
+    !path.startsWith("/_next/") &&
+    !path.startsWith("/auth/") &&
+    path !== "/zaloguj"
+  ) {
+    const loginUrl = new URL("/zaloguj", req.url);
+    loginUrl.searchParams.set("error", oauthError);
+    return NextResponse.redirect(loginUrl);
+  }
+
   // Post-OAuth redirect konsumowanie — niezawodne niezależnie od konfiguracji Supabase.
   // Supabase po OAuth może kierować na Site URL (np. "/") zamiast na ${origin}/auth/callback
   // gdy query param next= nie pasuje do whitelistowanego wzorca. Cookie auth_next (ustawiana
