@@ -16,17 +16,30 @@ export const maxDuration = 10;
  *   4. Signing secret → env RESEND_INBOUND_WEBHOOK_SECRET
  */
 
-function verifySignature(rawBody: string, headers: Headers): boolean {
+type SigCheck =
+  | { ok: true }
+  | { ok: false; reason: "secret_missing" | "headers_missing" | "signature_mismatch"; detail?: string };
+
+function verifySignature(rawBody: string, headers: Headers): SigCheck {
   const secret = process.env.RESEND_INBOUND_WEBHOOK_SECRET;
   if (!secret) {
     console.error("[resend:inbound] RESEND_INBOUND_WEBHOOK_SECRET missing");
-    return false;
+    return { ok: false, reason: "secret_missing" };
   }
   // Resend uses Svix — headers: svix-id, svix-timestamp, svix-signature
   const svixId = headers.get("svix-id");
   const svixTs = headers.get("svix-timestamp");
   const svixSig = headers.get("svix-signature");
-  if (!svixId || !svixTs || !svixSig) return false;
+  if (!svixId || !svixTs || !svixSig) {
+    const missing = [
+      !svixId && "svix-id",
+      !svixTs && "svix-timestamp",
+      !svixSig && "svix-signature",
+    ]
+      .filter(Boolean)
+      .join(",");
+    return { ok: false, reason: "headers_missing", detail: missing };
+  }
 
   // Whitelist format `whsec_xxx` → strip prefix before HMAC
   const key = secret.startsWith("whsec_")
@@ -38,7 +51,7 @@ function verifySignature(rawBody: string, headers: Headers): boolean {
 
   // svix-signature = "v1,base64sig v1,base64sig2" (space-separated)
   const signatures = svixSig.split(" ").map((s) => s.replace(/^v\d+,/, ""));
-  return signatures.some((sig) => {
+  const matched = signatures.some((sig) => {
     try {
       const a = Buffer.from(sig);
       const b = Buffer.from(expected);
@@ -47,6 +60,12 @@ function verifySignature(rawBody: string, headers: Headers): boolean {
       return false;
     }
   });
+  if (matched) return { ok: true };
+  return {
+    ok: false,
+    reason: "signature_mismatch",
+    detail: `expected_prefix=${expected.slice(0, 6)}... got_count=${signatures.length}`,
+  };
 }
 
 const attachmentSchema = z
@@ -96,8 +115,15 @@ function parseAddress(value: unknown): { email: string; name: string | null } {
 
 export async function POST(request: Request): Promise<Response> {
   const rawBody = await request.text();
-  if (!verifySignature(rawBody, request.headers)) {
-    return NextResponse.json({ error: "invalid signature" }, { status: 401 });
+  const sigCheck = verifySignature(rawBody, request.headers);
+  if (!sigCheck.ok) {
+    // Diagnostyczne body — widoczne w Resend Dashboard → Webhooks → Logs.
+    // Pomaga rozróżnić błędne ustawienie secret vs missing webhook config.
+    console.error("[resend:inbound] auth fail:", sigCheck.reason, sigCheck.detail);
+    return NextResponse.json(
+      { error: "invalid signature", reason: sigCheck.reason, detail: sigCheck.detail },
+      { status: 401 },
+    );
   }
 
   let payload: unknown;
