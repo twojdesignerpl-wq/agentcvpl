@@ -7,12 +7,17 @@ export const dynamic = "force-dynamic";
 /**
  * OAuth PKCE callback handler. Supabase redirectuje tutaj po pomyślnym
  * logowaniu Google/Facebook z `?code=...`. Wymieniamy kod na sesję + redirect
- * do `next` param (domyślnie `/konto`).
+ * do "next" (preferowane źródło: cookie auth_next zapisane przez LoginButtons —
+ * survival przez OAuth round-trip gdy Supabase nie propaguje query string;
+ * fallback: ?next= param — dla magic linków które mają pełne URL).
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const { searchParams, origin } = request.nextUrl;
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/konto";
+  const cookieNext = request.cookies.get("auth_next")?.value;
+  const queryNext = searchParams.get("next");
+  const rawNext = cookieNext ? decodeURIComponent(cookieNext) : queryNext;
+  const next = rawNext ?? "/konto";
   const errorDescription = searchParams.get("error_description");
 
   if (errorDescription) {
@@ -65,5 +70,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   // Chronione przed open redirect — tylko relative paths
   const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/konto";
-  return NextResponse.redirect(`${origin}${safeNext}`);
+  const response = NextResponse.redirect(`${origin}${safeNext}`);
+  // Wyczyść cookie auth_next po konsumpcji — nie chcemy żeby zostawała dla kolejnych logowań.
+  if (cookieNext) {
+    response.cookies.set("auth_next", "", { path: "/", maxAge: 0 });
+  }
+  return response;
 }

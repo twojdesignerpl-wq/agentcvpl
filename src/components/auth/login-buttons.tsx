@@ -21,6 +21,17 @@ export function LoginButtons({ redirectTo = "/konto", className }: Props) {
 
   const configured = isSupabaseConfigured();
 
+  const rememberNext = () => {
+    // Zapisz pożądaną ścieżkę w cookie (same-origin, 10 min TTL) — callback route
+    // odczyta to niezależnie od tego czy Supabase propaguje query string przez OAuth.
+    // Fallback przez query zachowany dla kompatybilności (np. magic link w mailu).
+    if (typeof document !== "undefined" && redirectTo.startsWith("/")) {
+      document.cookie = `auth_next=${encodeURIComponent(redirectTo)};path=/;max-age=600;samesite=lax${
+        window.location.protocol === "https:" ? ";secure" : ""
+      }`;
+    }
+  };
+
   const signInWithOAuth = async (provider: "google" | "facebook") => {
     if (!configured) {
       setMessage({
@@ -31,6 +42,7 @@ export function LoginButtons({ redirectTo = "/konto", className }: Props) {
     }
     setLoading(provider);
     setMessage(null);
+    rememberNext();
     try {
       const supabase = createSupabaseBrowserClient();
       const origin = typeof window !== "undefined" ? window.location.origin : "";
@@ -63,6 +75,7 @@ export function LoginButtons({ redirectTo = "/konto", className }: Props) {
     }
     setLoading("email");
     setMessage(null);
+    rememberNext();
     try {
       const supabase = createSupabaseBrowserClient();
       const origin = typeof window !== "undefined" ? window.location.origin : "";
