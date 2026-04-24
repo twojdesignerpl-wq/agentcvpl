@@ -105,7 +105,8 @@ in-memory w dev) + same-origin check. Szczegóły: **`src/app/api/CLAUDE.md`**.
 ## 9. SEO & brand
 
 `metadataBase: "https://agentcv.pl"`, `lang: "pl-PL"`. JsonLd w `src/components/seo/JsonLd.tsx`
-(Organization · SoftwareApplication z 3 ofertami Free/Pro/Unlimited · FAQPage · HowTo · Breadcrumb).
+(Organization · SoftwareApplication z 4 ofertami Free/Pro/Pro Pack/Unlimited · FAQPage · HowTo ·
+Breadcrumb). Pro Pack generowany automatycznie przez `pricingPlans.flatMap` gdy `plan.oneTime`.
 **Przy zmianie pricing/FAQ aktualizuj JsonLd jednym strumieniem** (landing content + schema).
 
 ## 10. Treść
@@ -145,8 +146,11 @@ npx shadcn@latest add @magicui/<name> | @aceternity/<name> | @motion-primitives/
   `WHERE created_at >= first_of_month` (brak cron reset).
 - **Plan gating w API** — każdy AI/export endpoint sprawdza plan **przed** wywołaniem modelu
   i zwraca 402 `plan_limit`/`no_access` z kodem polskim + CTA do `/subskrypcja`.
-- **Stripe TEST** — produkty `agentcv Pro` (19 PLN/mo) i `agentcv Unlimited` (39 PLN/mo).
-  Webhook aktualizuje `app_metadata.plan` + audit log `plan_grants` (source=stripe).
+- **Stripe TEST** — trzy produkty: `agentcv Pro` (19 PLN/mo, subscription), `agentcv Unlimited`
+  (39 PLN/mo, subscription), `agentcv Pro Pack` (19 PLN one-time, payment). Price IDs:
+  `STRIPE_PRICE_PRO`, `STRIPE_PRICE_UNLIMITED`, `STRIPE_PRICE_PRO_PACK`. Webhook aktualizuje
+  `app_metadata.plan` (subscription) lub wstawia wiersz do `plan_credits` (pack, 10 credits) +
+  audit log `plan_grants` (source=stripe).
 - **Email (Resend)** — nadawca `Agent CV - Pracuś AI <hej@agentcv.pl>`. Supabase Auth SMTP
   skonfigurowany na Resend (recovery/confirmation/magic link idą przez ten sam SMTP).
   Transactional `src/lib/email/send.ts`: `sendWelcome` (idempotentne przez `email_dispatches`

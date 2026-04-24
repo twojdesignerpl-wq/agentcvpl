@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useCVStore } from "@/lib/cv/store";
 import { useAutoFit } from "@/lib/cv/auto-fit";
 import { PageA4 } from "@/components/cv/page-a4";
@@ -19,7 +20,6 @@ import { usePlanSync } from "./pracus/use-plan-sync";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useIsClient } from "@/hooks/use-is-client";
 import { MobileKreatorShell } from "./mobile/mobile-shell";
-import { RequireLoginModal } from "@/components/auth/require-login-modal";
 import { track } from "@/lib/analytics/track";
 
 const AUTO_ZOOM_MIN = 0.4;
@@ -49,6 +49,7 @@ export function KreatorShell() {
 
 function DesktopKreatorShell() {
   usePlanSync();
+  const router = useRouter();
   const userPlan = usePlanStore((s) => s.userPlan);
   const planHydrated = usePlanStore((s) => s.hydrated);
   const showAiPanel = planHydrated && isAiPlan(userPlan);
@@ -65,7 +66,6 @@ function DesktopKreatorShell() {
 
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
-  const [needsLogin, setNeedsLogin] = useState(false);
 
   const depsKey = useMemo(() => deriveKey(cv), [cv]);
   const { effectiveFontSize, overflowed } = useAutoFit(
@@ -147,8 +147,9 @@ function DesktopKreatorShell() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      if (res.status === 401) {
-        setNeedsLogin(true);
+      if (res.status === 402) {
+        // Plan limit osiągnięty — odśwież, żeby KreatorGated przełączył się na blok-screen.
+        router.refresh();
         return;
       }
       if (!res.ok) {
@@ -166,6 +167,9 @@ function DesktopKreatorShell() {
       a.remove();
       URL.revokeObjectURL(url);
       track("cv_exported", { format, template: cv.settings.templateId });
+      // Po udanym pobraniu odśwież usage — jeśli był to ostatni dostępny slot,
+      // KreatorGated pokaże blok-screen z CTA do zakupu.
+      router.refresh();
     } catch (e) {
       setExportError((e as Error).message);
     } finally {
@@ -277,14 +281,6 @@ function DesktopKreatorShell() {
           </div>
         )}
       </div>
-
-      <RequireLoginModal
-        open={needsLogin}
-        onClose={() => setNeedsLogin(false)}
-        title="Zaloguj się, aby pobrać CV"
-        message="Pobranie PDF / DOCX wymaga konta. Twoje CV zostanie zapisane — wrócisz tu po zalogowaniu."
-        redirectTo="/kreator"
-      />
     </div>
   );
 }

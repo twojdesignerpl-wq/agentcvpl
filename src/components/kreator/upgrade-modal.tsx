@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Sparkle, X } from "@phosphor-icons/react";
+import { Sparkle, X } from "@phosphor-icons/react";
+import { CheckoutButton } from "@/app/subskrypcja/checkout-button";
 
 type Props = {
   open: boolean;
@@ -14,11 +15,11 @@ type Props = {
 const FEATURE_COPY: Record<Props["feature"], { title: string; desc: string }> = {
   download: {
     title: "Limit pobrań osiągnięty",
-    desc: "Plan Free pozwala na 1 pobranie CV miesięcznie. Przejdź na Pro (19 zł/mc) — 10 pobrań i pełny Pracuś.",
+    desc: "Darmowe pobranie wykorzystane. Wybierz plan lub jednorazowy pakiet, aby kontynuować.",
   },
   ai_chat: {
     title: "Pracuś AI jest dla Pro+",
-    desc: "Asystent AI to funkcja Pro. Odblokuj chat, dopasowanie do ogłoszenia i live ATS score za 19 zł/mc.",
+    desc: "Asystent AI to funkcja Pro. Odblokuj chat, dopasowanie do ogłoszenia i live ATS score.",
   },
   ai_cv: {
     title: "AI w edytorze — Pro+",
@@ -30,10 +31,67 @@ const FEATURE_COPY: Record<Props["feature"], { title: string; desc: string }> = 
   },
 };
 
+type CtaKey = "pack" | "pro" | "unlimited";
+
+type Cta = {
+  key: CtaKey;
+  label: string;
+  plan: "pro" | "unlimited";
+  mode: "sub" | "pack";
+  badge: string;
+  note: string;
+  variant: "primary" | "ghost";
+};
+
+const PACK_CTA: Cta = {
+  key: "pack",
+  label: "Pro Pack · 19 zł jednorazowo",
+  plan: "pro",
+  mode: "pack",
+  badge: "Najszybciej",
+  note: "10 pobrań, kredyty nie wygasają, pełny Pracuś AI",
+  variant: "primary",
+};
+const PRO_CTA: Cta = {
+  key: "pro",
+  label: "Pro · 19 zł / mies.",
+  plan: "pro",
+  mode: "sub",
+  badge: "Subskrypcja",
+  note: "10 pobrań co miesiąc, pełny AI, anulujesz kiedy chcesz",
+  variant: "ghost",
+};
+const UNLIMITED_CTA: Cta = {
+  key: "unlimited",
+  label: "Unlimited · 39 zł / mies.",
+  plan: "unlimited",
+  mode: "sub",
+  badge: "Bez limitu",
+  note: "Pobrania bez limitu, priority AI, premium support",
+  variant: "ghost",
+};
+
+function pickCtas(currentPlan: Props["currentPlan"], feature: Props["feature"]): Cta[] {
+  // Free + download (1/1 wyczerpane) — pełny wybór: Pack, Pro, Unlimited.
+  if (currentPlan === "free" && feature === "download") {
+    return [PACK_CTA, PRO_CTA, UNLIMITED_CTA];
+  }
+  // Free + AI features — Pack też daje AI, więc pełny wybór.
+  if (currentPlan === "free") {
+    return [PACK_CTA, PRO_CTA, UNLIMITED_CTA];
+  }
+  // Pro wyczerpał miesięczny limit — jedyna sensowna ścieżka: Unlimited.
+  if (currentPlan === "pro") {
+    return [UNLIMITED_CTA];
+  }
+  // Unlimited nie powinien widzieć tego modala, ale gdyby — return empty.
+  return [];
+}
+
 export function UpgradeModal({ open, onClose, reason, currentPlan, feature }: Props) {
   if (!open) return null;
   const copy = FEATURE_COPY[feature];
-  const suggestedPlan = feature === "download" && currentPlan === "pro" ? "unlimited" : "pro";
+  const ctas = pickCtas(currentPlan, feature);
 
   return (
     <div
@@ -45,7 +103,7 @@ export function UpgradeModal({ open, onClose, reason, currentPlan, feature }: Pr
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-md rounded-3xl bg-[color:var(--cream)] p-6 shadow-[0_24px_64px_-16px_rgba(10,14,26,0.4)] sm:p-8"
+        className="relative w-full max-w-lg rounded-3xl bg-[color:var(--cream)] p-6 shadow-[0_24px_64px_-16px_rgba(10,14,26,0.4)] sm:p-8"
       >
         <button
           type="button"
@@ -69,32 +127,43 @@ export function UpgradeModal({ open, onClose, reason, currentPlan, feature }: Pr
         <p className="mt-2 text-[14px] leading-relaxed text-[color:var(--ink-soft)]">{copy.desc}</p>
 
         <div className="mt-5 rounded-2xl bg-white p-4 text-[13px] text-[color:var(--ink-soft)]">
-          <p className="mono-label mb-2 text-[0.56rem] text-[color:var(--ink-muted)]">
+          <p className="mono-label mb-1 text-[0.56rem] text-[color:var(--ink-muted)]">
             Twój aktualny plan
           </p>
           <p className="font-display text-[15px] font-semibold capitalize tracking-tight">
             {currentPlan}
           </p>
-          {reason === "plan_limit" ? (
+          {reason === "plan_limit" && currentPlan === "pro" ? (
             <p className="mt-1 text-[11.5px] text-[color:var(--ink-muted)]">
-              Limit zresetuje się pierwszego dnia kolejnego miesiąca.
+              Miesięczny limit resetuje się pierwszego dnia kolejnego miesiąca.
             </p>
           ) : null}
         </div>
 
-        <div className="mt-6 flex flex-col gap-2">
-          <Link
-            href={`/subskrypcja?plan=${suggestedPlan}`}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-ink px-5 py-3 text-[14px] font-semibold text-cream transition-opacity hover:opacity-95"
-          >
-            Przejdź na {suggestedPlan === "unlimited" ? "Unlimited" : "Pro"}
-            <ArrowRight size={14} weight="bold" />
+        <div className="mt-5 flex flex-col gap-3">
+          {ctas.map((cta) => (
+            <div key={cta.key} className="flex flex-col gap-1.5">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="mono-label text-[0.56rem] text-[color:var(--ink-muted)]">
+                  {cta.badge}
+                </span>
+                <span className="text-[11.5px] text-[color:var(--ink-muted)]">{cta.note}</span>
+              </div>
+              <CheckoutButton
+                plan={cta.plan}
+                mode={cta.mode}
+                label={cta.label}
+                variant={cta.variant}
+              />
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-5 flex items-center justify-between gap-3 text-[12.5px] text-[color:var(--ink-muted)]">
+          <Link href="/subskrypcja" className="underline hover:text-ink">
+            Pełne porównanie
           </Link>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-[13px] text-[color:var(--ink-muted)] hover:text-ink"
-          >
+          <button type="button" onClick={onClose} className="hover:text-ink">
             Nie teraz
           </button>
         </div>

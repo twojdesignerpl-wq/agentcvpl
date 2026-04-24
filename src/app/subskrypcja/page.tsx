@@ -76,8 +76,8 @@ export default async function SubskrypcjaPage() {
             <div className="mb-10 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-[13px] leading-snug text-amber-900">
               Płatności w trybie scaffolding. Dodaj <code>STRIPE_SECRET_KEY</code>,{" "}
               <code>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code>, <code>STRIPE_WEBHOOK_SECRET</code>,{" "}
-              <code>STRIPE_PRICE_PRO</code>, <code>STRIPE_PRICE_UNLIMITED</code> w Vercel env,
-              potem redeploy.
+              <code>STRIPE_PRICE_PRO</code>, <code>STRIPE_PRICE_UNLIMITED</code>,{" "}
+              <code>STRIPE_PRICE_PRO_PACK</code> w Vercel env, potem redeploy.
             </div>
           ) : null}
 

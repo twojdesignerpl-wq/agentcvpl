@@ -73,10 +73,7 @@ export default async function ZalogujPage({ searchParams }: { searchParams: Sear
             .
           </p>
           <p className="mono-label text-[0.54rem] text-[color:var(--ink-muted)]">
-            Nie musisz się logować aby zacząć —{" "}
-            <Link href="/kreator" className="underline hover:text-ink">
-              otwórz kreator bez konta
-            </Link>
+            Pierwsze pobranie CV masz za darmo po zalogowaniu.
           </p>
         </footer>
       </div>

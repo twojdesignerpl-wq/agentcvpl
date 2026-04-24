@@ -44,8 +44,9 @@ export default function PrivacyPolicyPage() {
           <section>
             <h2 id="zakres">§2. Jakie dane przetwarzamy</h2>
             <p>
-              {BRAND.name} to darmowy kreator CV bez rejestracji i bez bazy danych użytkowników.
-              Twoje dane pozostają przede wszystkim w przeglądarce:
+              {BRAND.name} to kreator CV z kontem użytkownika (Supabase) i asystentem AI Pracuś.
+              Pierwsze pobranie CV jest darmowe. Twoje dane CV zapisują się przede wszystkim
+              w przeglądarce, a po zalogowaniu opcjonalnie synchronizujemy je z Twoim kontem:
             </p>
             <ul>
               <li>

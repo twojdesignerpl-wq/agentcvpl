@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useCVStore } from "@/lib/cv/store";
 import { useAutoFit } from "@/lib/cv/auto-fit";
 import { PageA4 } from "@/components/cv/page-a4";
@@ -21,7 +22,6 @@ import { MobileTabExport } from "./tab-export";
 import { MobilePreviewModal } from "./preview-modal";
 import { PracusFab } from "./pracus-fab";
 import { PracusQuickSheet } from "./pracus-quick-sheet";
-import { RequireLoginModal } from "@/components/auth/require-login-modal";
 import { track } from "@/lib/analytics/track";
 
 function deriveKey(cv: unknown) {
@@ -34,6 +34,7 @@ function deriveKey(cv: unknown) {
 
 export function MobileKreatorShell() {
   usePlanSync();
+  const router = useRouter();
   const cv = useCVStore((s) => s.cv);
   const hydrated = useCVStore((s) => s.hydrated);
   const pageRef = useRef<HTMLDivElement>(null);
@@ -44,7 +45,6 @@ export function MobileKreatorShell() {
   const [pracusOpen, setPracusOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
-  const [needsLogin, setNeedsLogin] = useState(false);
 
   const depsKey = useMemo(() => deriveKey(cv), [cv]);
   const { effectiveFontSize, overflowed } = useAutoFit(
@@ -67,8 +67,8 @@ export function MobileKreatorShell() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-        if (res.status === 401) {
-          setNeedsLogin(true);
+        if (res.status === 402) {
+          router.refresh();
           return;
         }
         if (!res.ok) {
@@ -87,13 +87,14 @@ export function MobileKreatorShell() {
         a.remove();
         URL.revokeObjectURL(url);
         track("cv_exported", { format, template: cv.settings.templateId, variant: "mobile" });
+        router.refresh();
       } catch (e) {
         setExportError((e as Error).message);
       } finally {
         setIsExporting(false);
       }
     },
-    [cv, effectiveFontSize],
+    [cv, effectiveFontSize, router],
   );
 
   const downloadPDF = useCallback(() => downloadExport("pdf"), [downloadExport]);
@@ -172,14 +173,6 @@ export function MobileKreatorShell() {
       ) : null}
 
       <PracusQuickSheet open={pracusOpen} onClose={() => setPracusOpen(false)} />
-
-      <RequireLoginModal
-        open={needsLogin}
-        onClose={() => setNeedsLogin(false)}
-        title="Zaloguj się, aby pobrać CV"
-        message="Pobranie PDF / DOCX wymaga konta. Twoje CV zostanie zapisane."
-        redirectTo="/kreator"
-      />
 
       <MobilePreviewModal
         open={previewOpen}

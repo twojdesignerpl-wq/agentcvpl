@@ -1,5 +1,5 @@
-import { KreatorShell } from "@/components/kreator/kreator-shell";
+import { KreatorGated } from "@/components/kreator/kreator-gated";
 
 export default function KreatorPage() {
-  return <KreatorShell />;
+  return <KreatorGated />;
 }
