@@ -127,7 +127,7 @@ export default function OG() {
             <span>·</span>
             <span>26 BRANŻ PL</span>
             <span>·</span>
-            <span>RODO ✓</span>
+            <span>RODO</span>
           </div>
         </div>
       </div>
