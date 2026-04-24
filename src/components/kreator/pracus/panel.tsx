@@ -7,11 +7,11 @@ import { PracusChat, type PracusChatHandle } from "./chat";
 import { HistoryButton } from "./history-panel";
 import { AtsGauge } from "./ats-gauge";
 import { JobContextActiveBar } from "./job-context-bar";
-import { usePlanStore } from "@/lib/plan/store";
+import { usePlan, planDisplayLabel } from "@/lib/plan/plan-context";
 
 export function PracusPanel() {
-  const plan = usePlanStore((s) => s.userPlan);
-  const planLabel = plan === "unlimited" ? "Unlimited" : "Pro";
+  const { plan, source } = usePlan();
+  const planLabel = planDisplayLabel(plan, source);
   const chatRef = useRef<PracusChatHandle>(null);
 
   const handleAskPracus = (prompt: string) => {

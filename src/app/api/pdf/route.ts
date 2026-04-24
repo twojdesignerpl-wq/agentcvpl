@@ -193,14 +193,22 @@ export async function POST(request: Request): Promise<Response> {
       },
     });
   } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
     console.error("[/api/pdf] Błąd generowania PDF:", err);
     return new Response(
-      JSON.stringify({ error: "Nie udało się wygenerować pliku PDF. Spróbuj ponownie za chwilę." }),
+      JSON.stringify({
+        error: `Nie udało się wygenerować pliku PDF: ${message}`,
+        code: "pdf_generation_failed",
+      }),
       { status: 500, headers: { "Content-Type": "application/json" } },
     );
   } finally {
     if (browser) {
-      await browser.close();
+      try {
+        await browser.close();
+      } catch {
+        // Ignore close errors — browser mogło już paść.
+      }
     }
   }
 }

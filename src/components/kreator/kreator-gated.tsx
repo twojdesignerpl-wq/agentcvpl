@@ -2,32 +2,42 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { isStripeConfigured } from "@/lib/stripe/plans";
 import { canDownload } from "@/lib/plans/usage";
+import { getEffectivePlan } from "@/lib/plans/quotas";
+import { PlanProvider } from "@/lib/plan/plan-context";
 import { KreatorShell } from "./kreator-shell";
 import { KreatorBlockedScreen } from "./kreator-blocked-screen";
 
 /**
  * Server Component otaczający edytor CV.
- * Sprawdza quotę pobrań (canDownload) PRZED renderowaniem Shell.
- * Jeśli Free wykorzystał 1/1 pobrań (albo Pro 10/10, albo Pack 0 credits) —
- * zamiast edytora pokazujemy blok-screen z 3 CTA (Pro Pack / Pro / Unlimited).
+ * 1) Sprawdza quotę pobrań (canDownload) — jeśli wyczerpana → KreatorBlockedScreen.
+ * 2) Dostarcza plan z serwera przez PlanProvider — client components (panel Pracuś,
+ *    mobile tab AI, etc.) czytają hasAI zamiast z niewiarygodnego Zustand store.
  *
- * Auth gate jest wyżej w layout.tsx (redirect /zaloguj gdy brak user). Tu wiemy,
- * że user jest zalogowany (gdy Supabase skonfigurowany).
+ * Auth gate jest wyżej w layout.tsx (redirect /zaloguj gdy brak user).
  */
 export async function KreatorGated() {
-  // Dev mode bez Supabase — passthrough (brak auth/plan system).
+  // Dev mode bez Supabase — passthrough z domyślnym Free.
   if (!isSupabaseConfigured()) {
-    return <KreatorShell />;
+    return (
+      <PlanProvider plan="free" source="free">
+        <KreatorShell />
+      </PlanProvider>
+    );
   }
 
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase.auth.getUser();
 
-  // Layout.tsx powinien już był zrobić redirect, ale double-check dla bezpieczeństwa.
   if (!data.user) {
-    return <KreatorShell />;
+    // Layout powinien zrobić redirect — fallback na pusty shell.
+    return (
+      <PlanProvider plan="free" source="free">
+        <KreatorShell />
+      </PlanProvider>
+    );
   }
 
+  const effective = await getEffectivePlan(data.user);
   const check = await canDownload(data.user);
 
   if (!check.ok) {
@@ -42,5 +52,9 @@ export async function KreatorGated() {
     );
   }
 
-  return <KreatorShell />;
+  return (
+    <PlanProvider plan={effective.tier} source={effective.source}>
+      <KreatorShell />
+    </PlanProvider>
+  );
 }

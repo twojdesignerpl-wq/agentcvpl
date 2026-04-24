@@ -4,7 +4,7 @@ import { useRef } from "react";
 import { PracusChat, type PracusChatHandle } from "@/components/kreator/pracus/chat";
 import { AtsGauge } from "@/components/kreator/pracus/ats-gauge";
 import { PracusMark } from "@/components/kreator/pracus/icon";
-import { usePlanStore } from "@/lib/plan/store";
+import { usePlan, planDisplayLabel } from "@/lib/plan/plan-context";
 import { BottomSheet } from "./bottom-sheet";
 
 type Props = {
@@ -17,8 +17,8 @@ type Props = {
  * (Editor, Styl) bez opuszczania aktualnej edycji.
  */
 export function PracusQuickSheet({ open, onClose }: Props) {
-  const plan = usePlanStore((s) => s.userPlan);
-  const planLabel = plan === "unlimited" ? "Unlimited" : plan === "pro" ? "Pro" : "Free";
+  const { plan, source } = usePlan();
+  const planLabel = planDisplayLabel(plan, source);
   const chatRef = useRef<PracusChatHandle>(null);
 
   const handleAskPracus = (prompt: string) => {

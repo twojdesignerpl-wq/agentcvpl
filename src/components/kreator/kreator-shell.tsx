@@ -14,9 +14,8 @@ import { TemplateLumen } from "@/components/cv/template-lumen";
 import { RodoFooter } from "@/components/cv/sections/rodo-footer";
 import { Toolbar } from "./toolbar";
 import { clampZoom, ZOOM_STEP } from "./zoom-control";
-import { isAiPlan, usePlanStore } from "@/lib/plan/store";
+import { usePlan } from "@/lib/plan/plan-context";
 import { PracusPanel } from "./pracus/panel";
-import { usePlanSync } from "./pracus/use-plan-sync";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useIsClient } from "@/hooks/use-is-client";
 import { MobileKreatorShell } from "./mobile/mobile-shell";
@@ -48,11 +47,9 @@ export function KreatorShell() {
 }
 
 function DesktopKreatorShell() {
-  usePlanSync();
   const router = useRouter();
-  const userPlan = usePlanStore((s) => s.userPlan);
-  const planHydrated = usePlanStore((s) => s.hydrated);
-  const showAiPanel = planHydrated && isAiPlan(userPlan);
+  const { hasAI } = usePlan();
+  const showAiPanel = hasAI;
 
   const cv = useCVStore((s) => s.cv);
   const hydrated = useCVStore((s) => s.hydrated);

@@ -12,7 +12,7 @@ import { TemplateCobalt } from "@/components/cv/template-cobalt";
 import { CobaltDecorativeBlobs } from "@/components/cv/cobalt/decorative-blobs";
 import { TemplateLumen } from "@/components/cv/template-lumen";
 import { RodoFooter } from "@/components/cv/sections/rodo-footer";
-import { usePlanSync } from "@/components/kreator/pracus/use-plan-sync";
+import { usePlan } from "@/lib/plan/plan-context";
 import { MobileTopBar } from "./top-bar";
 import { MobileBottomNav, type MobileTab } from "./bottom-nav";
 import { MobileTabEditor } from "./tab-editor";
@@ -33,8 +33,8 @@ function deriveKey(cv: unknown) {
 }
 
 export function MobileKreatorShell() {
-  usePlanSync();
   const router = useRouter();
+  const { hasAI } = usePlan();
   const cv = useCVStore((s) => s.cv);
   const hydrated = useCVStore((s) => s.hydrated);
   const pageRef = useRef<HTMLDivElement>(null);
@@ -167,12 +167,14 @@ export function MobileKreatorShell() {
 
       <MobileBottomNav active={activeTab} onChange={setActiveTab} />
 
-      {/* Pracuś FAB — widoczny tylko w editor/style, nie w Pracuś tab ani Pobierz */}
-      {activeTab === "editor" || activeTab === "style" ? (
+      {/* Pracuś FAB — tylko dla planów z AI (Pro/Unlimited/Pack), widoczny w editor/style */}
+      {hasAI && (activeTab === "editor" || activeTab === "style") ? (
         <PracusFab onOpen={() => setPracusOpen(true)} />
       ) : null}
 
-      <PracusQuickSheet open={pracusOpen} onClose={() => setPracusOpen(false)} />
+      {hasAI ? (
+        <PracusQuickSheet open={pracusOpen} onClose={() => setPracusOpen(false)} />
+      ) : null}
 
       <MobilePreviewModal
         open={previewOpen}
