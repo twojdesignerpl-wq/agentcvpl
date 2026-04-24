@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ArrowLeft } from "@phosphor-icons/react/dist/ssr";
 import { LoginButtons } from "@/components/auth/login-buttons";
 import { ForgotPasswordLink } from "@/components/auth/forgot-password-link";
 import { PracusBrandImage } from "@/components/landing/_shared/pracus-brand";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
 
 export const metadata: Metadata = {
   title: "Zaloguj się | agentcv",
@@ -12,10 +15,24 @@ export const metadata: Metadata = {
   robots: { index: false, follow: true },
 };
 
+// Auth state zależy od cookies — sprawdzamy na każdym renderze, nigdy nie cache'ujemy.
+export const dynamic = "force-dynamic";
+
 type SearchParams = Promise<{ next?: string; error?: string }>;
 
 export default async function ZalogujPage({ searchParams }: { searchParams: SearchParams }) {
   const { next, error } = await searchParams;
+
+  // Jeśli user już zalogowany — redirect na "next" (albo /konto), nie pokazuj formy.
+  // Chroni przed pętlą gdy user wraca z OAuth z już ustawioną sesją.
+  if (isSupabaseConfigured()) {
+    const supabase = await createSupabaseServerClient();
+    const { data } = await supabase.auth.getUser();
+    if (data.user) {
+      const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : "/konto";
+      redirect(safeNext);
+    }
+  }
 
   return (
     <main className="min-h-[100dvh] bg-[color:var(--cream)] text-[color:var(--ink)]">

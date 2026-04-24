@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 import { checkLimit, getClientIp, type RateResult } from "@/lib/rate-limit";
 import { updateSupabaseSession } from "@/lib/supabase/middleware";
 
@@ -69,6 +70,10 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   // Supabase po OAuth może kierować na Site URL (np. "/") zamiast na ${origin}/auth/callback
   // gdy query param next= nie pasuje do whitelistowanego wzorca. Cookie auth_next (ustawiana
   // w LoginButtons przed OAuth start) przetrwa round-trip i tutaj zostanie skonsumowana.
+  //
+  // Kluczowe: redirect TYLKO gdy user faktycznie ma sesję Supabase. Inaczej grozi pętla
+  // (unauthenticated request → redirect na /kreator → layout redirect na /zaloguj → loop).
+  //
   // Skipujemy /api, /_next, /auth — te mają własną obsługę.
   if (
     !path.startsWith("/api/") &&
@@ -79,8 +84,30 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     if (authNext) {
       const target = decodeURIComponent(authNext);
       const safe = target.startsWith("/") && !target.startsWith("//") ? target : null;
-      // Clear cookie niezależnie (raz konsumowana — chronimy przed pętlą / stale cookie).
-      if (safe && safe !== path) {
+
+      // Sprawdź czy user jest faktycznie zalogowany. Jeśli nie — nie redirectujemy
+      // (pozwalamy flow się kontynuować normalnie, cookie wciąż tam jest na kolejną próbę).
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      let userAuthenticated = false;
+      if (supabaseUrl && anonKey) {
+        try {
+          const supabase = createServerClient(supabaseUrl, anonKey, {
+            cookies: {
+              getAll: () => req.cookies.getAll(),
+              setAll: () => {
+                /* read-only w proxy cookie-check */
+              },
+            },
+          });
+          const { data } = await supabase.auth.getUser();
+          userAuthenticated = Boolean(data.user);
+        } catch {
+          userAuthenticated = false;
+        }
+      }
+
+      if (safe && safe !== path && userAuthenticated) {
         const redirect = NextResponse.redirect(new URL(safe, req.url));
         // Zachowaj Supabase session cookies ustawione w updateSupabaseSession.
         supabaseResponse.cookies.getAll().forEach((c) =>
@@ -89,7 +116,10 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
         redirect.cookies.set("auth_next", "", { path: "/", maxAge: 0 });
         return redirect;
       }
-      supabaseResponse.cookies.set("auth_next", "", { path: "/", maxAge: 0 });
+      // Jeśli user już jest na target OR nie zalogowany — clear cookie jeśli user na target.
+      if (userAuthenticated && safe === path) {
+        supabaseResponse.cookies.set("auth_next", "", { path: "/", maxAge: 0 });
+      }
     }
   }
 
