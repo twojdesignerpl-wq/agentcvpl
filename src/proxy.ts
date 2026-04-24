@@ -65,6 +65,34 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   // Robimy to zawsze — nie tylko dla /api — bo Server Components też potrzebują aktualnego tokenu.
   const supabaseResponse = await updateSupabaseSession(req);
 
+  // Post-OAuth redirect konsumowanie — niezawodne niezależnie od konfiguracji Supabase.
+  // Supabase po OAuth może kierować na Site URL (np. "/") zamiast na ${origin}/auth/callback
+  // gdy query param next= nie pasuje do whitelistowanego wzorca. Cookie auth_next (ustawiana
+  // w LoginButtons przed OAuth start) przetrwa round-trip i tutaj zostanie skonsumowana.
+  // Skipujemy /api, /_next, /auth — te mają własną obsługę.
+  if (
+    !path.startsWith("/api/") &&
+    !path.startsWith("/_next/") &&
+    !path.startsWith("/auth/")
+  ) {
+    const authNext = req.cookies.get("auth_next")?.value;
+    if (authNext) {
+      const target = decodeURIComponent(authNext);
+      const safe = target.startsWith("/") && !target.startsWith("//") ? target : null;
+      // Clear cookie niezależnie (raz konsumowana — chronimy przed pętlą / stale cookie).
+      if (safe && safe !== path) {
+        const redirect = NextResponse.redirect(new URL(safe, req.url));
+        // Zachowaj Supabase session cookies ustawione w updateSupabaseSession.
+        supabaseResponse.cookies.getAll().forEach((c) =>
+          redirect.cookies.set(c.name, c.value, c as { name: string; value: string }),
+        );
+        redirect.cookies.set("auth_next", "", { path: "/", maxAge: 0 });
+        return redirect;
+      }
+      supabaseResponse.cookies.set("auth_next", "", { path: "/", maxAge: 0 });
+    }
+  }
+
   if (path.startsWith("/api/") && !isSameOrigin(req)) {
     return new NextResponse(
       JSON.stringify({ error: "Forbidden origin" }),
