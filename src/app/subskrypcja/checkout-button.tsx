@@ -11,9 +11,18 @@ type Props = {
   label: string;
   disabled?: boolean;
   variant?: "primary" | "ghost";
+  /** "md" default (py-3) · "lg" dla premium card CTA (py-3.5 + większy tekst). */
+  size?: "md" | "lg";
 };
 
-export function CheckoutButton({ plan, mode = "sub", label, disabled, variant = "primary" }: Props) {
+export function CheckoutButton({
+  plan,
+  mode = "sub",
+  label,
+  disabled,
+  variant = "primary",
+  size = "md",
+}: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,6 +58,10 @@ export function CheckoutButton({ plan, mode = "sub", label, disabled, variant = 
     }
   };
 
+  const sizeCls = size === "lg"
+    ? "px-6 py-3.5 text-[15px]"
+    : "px-5 py-3 text-[14px]";
+
   return (
     <div className="space-y-2">
       <button
@@ -56,14 +69,43 @@ export function CheckoutButton({ plan, mode = "sub", label, disabled, variant = 
         onClick={start}
         disabled={disabled || loading}
         className={cn(
-          "tap-target inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-[14px] font-semibold transition-all hover:opacity-95 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50",
+          "group tap-target relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-full font-semibold transition-all duration-200",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--saffron)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--cream)]",
+          "active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100",
+          sizeCls,
           variant === "primary"
-            ? "bg-ink text-cream"
-            : "border border-[color:var(--ink)]/20 bg-[color:var(--cream)] text-ink hover:border-[color:var(--ink)]/50",
+            ? "bg-[color:var(--ink)] text-[color:var(--cream)] shadow-[0_8px_24px_-12px_rgba(10,14,26,0.55)] hover:shadow-[0_14px_32px_-10px_rgba(10,14,26,0.65)] hover:-translate-y-[1px]"
+            : "border border-[color:color-mix(in_oklab,var(--ink)_18%,transparent)] bg-[color:var(--cream)] text-[color:var(--ink)] hover:border-[color:var(--ink)] hover:bg-[color:var(--cream-soft)]",
         )}
       >
-        {loading ? "Przekierowuję…" : label}
-        {!loading ? <ArrowRight size={14} weight="bold" /> : null}
+        {/* Saffron shimmer sweep on hover (primary only) */}
+        {variant === "primary" ? (
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-[color:color-mix(in_oklab,var(--saffron)_32%,transparent)] to-transparent transition-transform duration-700 group-hover:translate-x-full"
+          />
+        ) : null}
+
+        <span className="relative z-10 flex items-center gap-2">
+          {loading ? (
+            <>
+              <span
+                aria-hidden
+                className="inline-block size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent"
+              />
+              Przekierowuję…
+            </>
+          ) : (
+            <>
+              {label}
+              <ArrowRight
+                size={size === "lg" ? 16 : 14}
+                weight="bold"
+                className="transition-transform duration-200 group-hover:translate-x-0.5"
+              />
+            </>
+          )}
+        </span>
       </button>
       {error ? (
         <p role="alert" className="rounded-xl bg-rose-50 px-3 py-2 text-[12.5px] text-rose-700">
