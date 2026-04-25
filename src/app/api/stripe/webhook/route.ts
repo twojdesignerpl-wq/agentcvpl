@@ -22,7 +22,17 @@ export async function POST(request: Request): Promise<Response> {
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
 
   if (!signature || !secret) {
-    return NextResponse.json({ error: "Missing signature or secret" }, { status: 400 });
+    // Diagnostyczne body — widoczne w Stripe Dashboard → Webhooks → Logs.
+    const reason = !signature && !secret
+      ? "no_signature_no_secret"
+      : !signature
+        ? "no_signature_header"
+        : "secret_missing_in_env";
+    console.error("[stripe:webhook] auth precheck fail:", reason);
+    return NextResponse.json(
+      { error: "Missing signature or secret", reason },
+      { status: 400 },
+    );
   }
 
   const rawBody = await request.text();
@@ -32,8 +42,16 @@ export async function POST(request: Request): Promise<Response> {
     const stripe = getStripeServer();
     event = stripe.webhooks.constructEvent(rawBody, signature, secret);
   } catch (err) {
-    console.error("[stripe:webhook] Signature verification failed:", (err as Error).message);
-    return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+    const message = (err as Error).message;
+    console.error("[stripe:webhook] Signature verification failed:", message);
+    return NextResponse.json(
+      {
+        error: "Invalid signature",
+        reason: "signature_verification_failed",
+        detail: message,
+      },
+      { status: 400 },
+    );
   }
 
   try {
