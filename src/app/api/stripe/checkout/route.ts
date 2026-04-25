@@ -81,38 +81,69 @@ export async function POST(request: Request): Promise<Response> {
       kind: config.kind,
     };
 
+    // P0.5: zgoda na rozpoczęcie spełniania świadczenia przed upływem 14-dniowego
+    // terminu odstąpienia (art. 38 pkt 13 u.p.k.). Stripe wyświetla checkbox z
+    // tekstem custom_text + linkiem do Regulaminu (terms_of_service_url w Stripe
+    // account settings). Bez akceptacji checkboxu — Pay button disabled.
+    const consentCollection = {
+      terms_of_service: "required" as const,
+    };
+    const customText = {
+      terms_of_service_acceptance: {
+        message:
+          "Akceptuję Regulamin oraz wyrażam zgodę na rozpoczęcie spełniania świadczenia (dostarczenie treści cyfrowych — generowanie i pobieranie CV) przed upływem 14-dniowego terminu odstąpienia. Po pierwszym pobraniu CV traci się prawo odstąpienia od umowy zgodnie z art. 38 pkt 13 ustawy z dnia 30 maja 2014 r. o prawach konsumenta.",
+      },
+    };
+
+    // P1.5: idempotency key chroni przed double-click — bucket 10s pozwala
+    // legitymowanym retry'om po awarii sieci, ale podwójny POST w 1 sekundzie
+    // zwraca tę samą sesję zamiast tworzyć dwie.
+    const idempotencyKey = `checkout-${user.id}-${config.plan}-${config.kind}-${Math.floor(
+      Date.now() / 10_000,
+    )}`;
+
     const session =
       config.stripeMode === "subscription"
-        ? await stripe.checkout.sessions.create({
-            mode: "subscription",
-            line_items: [{ price: config.priceId, quantity: 1 }],
-            customer: existingCustomerId,
-            customer_email: existingCustomerId ? undefined : user.email ?? undefined,
-            client_reference_id: user.id,
-            metadata,
-            subscription_data: { metadata },
-            locale: "pl",
-            success_url: `${origin}/subskrypcja/sukces?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${origin}/subskrypcja/anulowane`,
-            allow_promotion_codes: true,
-            billing_address_collection: "auto",
-            tax_id_collection: { enabled: true },
-          })
-        : await stripe.checkout.sessions.create({
-            mode: "payment",
-            line_items: [{ price: config.priceId, quantity: 1 }],
-            customer: existingCustomerId,
-            customer_email: existingCustomerId ? undefined : user.email ?? undefined,
-            client_reference_id: user.id,
-            metadata,
-            payment_intent_data: { metadata },
-            locale: "pl",
-            success_url: `${origin}/subskrypcja/sukces?session_id={CHECKOUT_SESSION_ID}&kind=pack`,
-            cancel_url: `${origin}/subskrypcja/anulowane`,
-            allow_promotion_codes: true,
-            billing_address_collection: "auto",
-            tax_id_collection: { enabled: true },
-          });
+        ? await stripe.checkout.sessions.create(
+            {
+              mode: "subscription",
+              line_items: [{ price: config.priceId, quantity: 1 }],
+              customer: existingCustomerId,
+              customer_email: existingCustomerId ? undefined : user.email ?? undefined,
+              client_reference_id: user.id,
+              metadata,
+              subscription_data: { metadata },
+              locale: "pl",
+              success_url: `${origin}/subskrypcja/sukces?session_id={CHECKOUT_SESSION_ID}`,
+              cancel_url: `${origin}/subskrypcja/anulowane`,
+              allow_promotion_codes: true,
+              billing_address_collection: "auto",
+              tax_id_collection: { enabled: true },
+              consent_collection: consentCollection,
+              custom_text: customText,
+            },
+            { idempotencyKey },
+          )
+        : await stripe.checkout.sessions.create(
+            {
+              mode: "payment",
+              line_items: [{ price: config.priceId, quantity: 1 }],
+              customer: existingCustomerId,
+              customer_email: existingCustomerId ? undefined : user.email ?? undefined,
+              client_reference_id: user.id,
+              metadata,
+              payment_intent_data: { metadata },
+              locale: "pl",
+              success_url: `${origin}/subskrypcja/sukces?session_id={CHECKOUT_SESSION_ID}&kind=pack`,
+              cancel_url: `${origin}/subskrypcja/anulowane`,
+              allow_promotion_codes: true,
+              billing_address_collection: "auto",
+              tax_id_collection: { enabled: true },
+              consent_collection: consentCollection,
+              custom_text: customText,
+            },
+            { idempotencyKey },
+          );
 
     if (!session.url) {
       throw new Error("Checkout session nie ma url");

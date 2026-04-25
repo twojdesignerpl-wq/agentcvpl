@@ -2,7 +2,14 @@ import { cvDataSchema } from "@/lib/cv/schema";
 import { renderCVToDocx } from "@/lib/cv/render-docx";
 import { requireUser } from "@/lib/auth/guard";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
-import { canDownload, decrementPackCredit, planLimitResponse, recordUsage } from "@/lib/plans/usage";
+import {
+  canDownload,
+  claimPackCredit,
+  refundPackCredit,
+  planLimitResponse,
+  recordUsage,
+  type PackClaim,
+} from "@/lib/plans/usage";
 import { z } from "zod";
 import type { User } from "@supabase/supabase-js";
 
@@ -44,6 +51,21 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
+  // P0.4: atomic claim PRZED render; refund jeśli render fail.
+  let packClaim: PackClaim | null = null;
+  if (authUser && usedPackSource) {
+    packClaim = await claimPackCredit(authUser.id);
+    if (!packClaim) {
+      return planLimitResponse({
+        ok: false,
+        reason: "plan_limit",
+        plan: "pro",
+        limit: 0,
+        used: 0,
+      });
+    }
+  }
+
   try {
     const buffer = await renderCVToDocx(parsed.data.cvData);
 
@@ -51,10 +73,8 @@ export async function POST(request: Request): Promise<Response> {
       void recordUsage(authUser.id, "docx", {
         bytes: buffer.length,
         source: usedPackSource ? "pro_pack" : "subscription_or_free",
+        claim_id: packClaim?.claim_id ?? null,
       });
-      if (usedPackSource) {
-        void decrementPackCredit(authUser.id);
-      }
     }
 
     const fileName =
@@ -73,6 +93,7 @@ export async function POST(request: Request): Promise<Response> {
       },
     });
   } catch (err) {
+    if (packClaim) void refundPackCredit(packClaim.claim_id);
     console.error("[/api/docx] Błąd generowania DOCX:", err);
     return new Response(
       JSON.stringify({ error: "Nie udało się wygenerować pliku DOCX. Spróbuj ponownie za chwilę." }),

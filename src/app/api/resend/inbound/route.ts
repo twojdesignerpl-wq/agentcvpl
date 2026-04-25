@@ -16,9 +16,21 @@ export const maxDuration = 10;
  *   4. Signing secret → env RESEND_INBOUND_WEBHOOK_SECRET
  */
 
+// Svix replay window: +/- 5 min toleruje clock skew, ale blokuje replay attacks.
+const SVIX_TIMESTAMP_TOLERANCE_SEC = 5 * 60;
+
 type SigCheck =
   | { ok: true }
-  | { ok: false; reason: "secret_missing" | "headers_missing" | "signature_mismatch"; detail?: string };
+  | {
+      ok: false;
+      reason:
+        | "secret_missing"
+        | "headers_missing"
+        | "timestamp_invalid"
+        | "timestamp_out_of_tolerance"
+        | "signature_mismatch";
+      detail?: string;
+    };
 
 function verifySignature(rawBody: string, headers: Headers): SigCheck {
   const secret = process.env.RESEND_INBOUND_WEBHOOK_SECRET;
@@ -39,6 +51,20 @@ function verifySignature(rawBody: string, headers: Headers): SigCheck {
       .filter(Boolean)
       .join(",");
     return { ok: false, reason: "headers_missing", detail: missing };
+  }
+
+  // Replay protection: timestamp musi być w oknie ±5 min od now()
+  const tsNum = Number(svixTs);
+  if (!Number.isFinite(tsNum)) {
+    return { ok: false, reason: "timestamp_invalid", detail: `svix-timestamp=${svixTs}` };
+  }
+  const ageSec = Math.abs(Date.now() / 1000 - tsNum);
+  if (ageSec > SVIX_TIMESTAMP_TOLERANCE_SEC) {
+    return {
+      ok: false,
+      reason: "timestamp_out_of_tolerance",
+      detail: `age_sec=${Math.floor(ageSec)} (tolerance=${SVIX_TIMESTAMP_TOLERANCE_SEC})`,
+    };
   }
 
   // Whitelist format `whsec_xxx` → strip prefix before HMAC
@@ -222,6 +248,11 @@ export async function POST(request: Request): Promise<Response> {
   });
 
   if (insertErr) {
+    // 23505 = duplicate (Resend retry tego samego email_id) → 200, no-op.
+    if (insertErr.code === "23505") {
+      console.log("[resend:inbound] duplicate inbound, no-op:", d.email_id);
+      return NextResponse.json({ received: true, duplicate: true, thread_id: threadId });
+    }
     console.error("[resend:inbound] insert failed:", insertErr);
     // Zwróć 500 żeby Resend retry'ował — lepsza obsługa niż stracić email
     return NextResponse.json({ error: "persist failed" }, { status: 500 });

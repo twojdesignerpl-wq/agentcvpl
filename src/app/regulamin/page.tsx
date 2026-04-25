@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-const LAST_UPDATE = "21 kwietnia 2026";
+const LAST_UPDATE = "25 kwietnia 2026";
 
 export default function TermsPage() {
   return (
@@ -40,12 +40,28 @@ export default function TermsPage() {
                 <strong>Użytkownik</strong> — każda osoba fizyczna korzystająca z serwisu.
               </li>
               <li>
-                <strong>Usługa</strong> — bezpłatny kreator CV z asystentem AI Pracuś, udostępniany
-                w formie strony internetowej.
+                <strong>Konto</strong> — indywidualny profil Użytkownika utworzony w serwisie
+                wymagany do dostępu do kreatora CV (<code>/kreator</code>) i pobierania CV.
+              </li>
+              <li>
+                <strong>Usługa</strong> — kreator CV z asystentem AI Pracuś, udostępniany w
+                formie strony internetowej, w wariantach Free oraz odpłatnych (Pro, Unlimited,
+                Pro Pack — patrz §7).
+              </li>
+              <li>
+                <strong>Plan</strong> — pakiet uprawnień (limity pobrań, dostęp do AI) wybrany
+                przez Użytkownika. Plany są opisane w §7 oraz na stronie{" "}
+                <Link href="/#cennik" className="underline">cennika</Link>.
               </li>
               <li>
                 <strong>Agent Pracuś</strong> — model językowy oparty o Claude firmy Anthropic,
                 skonfigurowany do wsparcia użytkownika w pisaniu polskojęzycznego CV.
+              </li>
+              <li>
+                <strong>Treści cyfrowe</strong> — pliki CV w formatach PDF i DOCX wygenerowane
+                przez Usługę i pobierane przez Użytkownika (treści cyfrowe niezapisane na
+                materialnym nośniku w rozumieniu art. 38 pkt 13 ustawy z 30 maja 2014 r. o
+                prawach konsumenta).
               </li>
             </ul>
           </section>
@@ -53,7 +69,8 @@ export default function TermsPage() {
           <section>
             <h2 id="rodzaj">§2. Rodzaj i zakres usługi</h2>
             <p>
-              {BRAND.name} udostępnia bezpłatnie następujące funkcje:
+              {BRAND.name} udostępnia następujące funkcje (zakres dostępu zależy od wybranego
+              Planu — patrz §7):
             </p>
             <ul>
               <li>Edytor CV z podglądem w czasie rzeczywistym,</li>
@@ -64,9 +81,10 @@ export default function TermsPage() {
               <li>Analiza dopasowania CV do ogłoszenia o pracę.</li>
             </ul>
             <p>
-              Usługa nie wymaga rejestracji konta. Dane CV zapisywane są w pamięci przeglądarki
-              Użytkownika (<code>localStorage</code>) i nie są przechowywane na serwerach
-              Usługodawcy.
+              Korzystanie z kreatora wymaga założenia Konta (e-mail + hasło lub logowanie OAuth).
+              Dane edytowanego CV zapisywane są w pamięci przeglądarki Użytkownika
+              (<code>localStorage</code>) oraz, opcjonalnie, w bazie Usługodawcy w celu
+              synchronizacji między urządzeniami.
             </p>
           </section>
 
@@ -141,7 +159,79 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 id="reklamacje">§7. Reklamacje</h2>
+            <h2 id="platnosci">§7. Płatności, plany i prawo odstąpienia</h2>
+            <p>
+              <strong>Plany.</strong> Usługa dostępna jest w czterech wariantach:
+            </p>
+            <ul>
+              <li>
+                <strong>Free</strong> — 1 pobranie CV miesięcznie, bez dostępu do AI Pracuś
+                (bezpłatnie).
+              </li>
+              <li>
+                <strong>Pro</strong> — 19&nbsp;zł / miesiąc (subskrypcja) — 10 pobrań / mies.,
+                pełny dostęp do AI Pracuś, dopasowanie do ogłoszenia.
+              </li>
+              <li>
+                <strong>Unlimited</strong> — 39&nbsp;zł / miesiąc (subskrypcja) — bez limitu
+                pobrań, priorytetowe AI, wczesny dostęp.
+              </li>
+              <li>
+                <strong>Pro Pack</strong> — 19&nbsp;zł jednorazowo (płatność jednokrotna) —
+                10 kredytów na pobranie CV + pełne AI. Kredyty nie wygasają.
+              </li>
+            </ul>
+            <p>
+              <strong>Operator płatności.</strong> Płatności obsługuje Stripe Payments Europe
+              Ltd. (Irlandia). Rozliczenia w PLN. Faktury wystawia operator.
+            </p>
+            <p>
+              <strong>Odnawianie subskrypcji.</strong> Plany Pro i Unlimited odnawiają się
+              automatycznie co miesiąc do momentu rezygnacji. Rezygnacja możliwa w dowolnej
+              chwili z poziomu portalu Stripe — usługa działa do końca opłaconego okresu.
+            </p>
+            <p>
+              <strong>Prawo odstąpienia od umowy.</strong> Konsumentowi przysługuje co do zasady
+              prawo do odstąpienia od umowy zawartej na odległość w terminie 14 dni bez podania
+              przyczyny (art. 27 ustawy z 30 maja 2014 r. o prawach konsumenta).
+            </p>
+            <p>
+              <strong>Wyjątek dla treści cyfrowych — art. 38 pkt 13 u.p.k.</strong> Zgodnie z
+              art. 38 pkt 13 ustawy o prawach konsumenta, prawo odstąpienia <em>nie przysługuje</em>{" "}
+              w odniesieniu do umów o dostarczanie treści cyfrowych niezapisanych na materialnym
+              nośniku, jeżeli spełnianie świadczenia rozpoczęło się za wyraźną zgodą Konsumenta
+              przed upływem terminu odstąpienia i po poinformowaniu go przez Usługodawcę o
+              utracie prawa do odstąpienia.
+            </p>
+            <p>
+              W trakcie procesu zakupu (w bramce Stripe) Konsument zostaje poproszony o złożenie
+              następującego oświadczenia:
+            </p>
+            <blockquote>
+              &bdquo;Akceptuję Regulamin oraz wyrażam zgodę na rozpoczęcie spełniania świadczenia
+              (dostarczenie treści cyfrowych — generowanie i pobieranie CV) przed upływem
+              14-dniowego terminu odstąpienia. Po pierwszym pobraniu CV traci się prawo
+              odstąpienia od umowy zgodnie z art. 38 pkt 13 ustawy z dnia 30 maja 2014 r. o
+              prawach konsumenta.&rdquo;
+            </blockquote>
+            <p>
+              <strong>Skutek złożenia oświadczenia.</strong> Po pierwszym pobraniu CV (PDF lub
+              DOCX) Konsument traci prawo do odstąpienia od umowy zarówno w przypadku planów
+              subskrypcyjnych (Pro/Unlimited), jak i jednorazowego Pro Pack. W szczególnych
+              przypadkach (np. brak pobrania w okresie subskrypcji) Usługodawca może rozpatrzyć
+              indywidualne zwroty na podstawie wniosku skierowanego na adres{" "}
+              <a href={`mailto:${BRAND.email}`} className="underline">{BRAND.email}</a>.
+            </p>
+            <p>
+              <strong>Przerwa w dostępie do płatnej Usługi.</strong> W razie nieuregulowanej
+              płatności (odrzucona karta, wygasająca subskrypcja) plan Użytkownika zostaje
+              automatycznie obniżony do Free. Wcześniej wygenerowane i pobrane CV pozostają u
+              Użytkownika.
+            </p>
+          </section>
+
+          <section>
+            <h2 id="reklamacje">§8. Reklamacje</h2>
             <p>
               Reklamacje dotyczące działania Usługi należy kierować na adres:{" "}
               <a href={`mailto:${BRAND.email}`} className="underline">
@@ -153,7 +243,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 id="zmiany">§8. Zmiany regulaminu</h2>
+            <h2 id="zmiany">§9. Zmiany regulaminu</h2>
             <p>
               Usługodawca zastrzega prawo do wprowadzenia zmian w niniejszym regulaminie. O
               istotnych zmianach Użytkownicy zostaną poinformowani w aplikacji lub przez
@@ -163,7 +253,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 id="koncowe">§9. Postanowienia końcowe</h2>
+            <h2 id="koncowe">§10. Postanowienia końcowe</h2>
             <ul>
               <li>
                 W sprawach nieuregulowanych stosuje się prawo polskie, w szczególności Kodeks

@@ -13,6 +13,7 @@ const LIMITS: Record<string, number> = {
   "/api/fetch-job": 5,
   "/api/og": 60,
   "/api/resend/inbound": 60, // Resend webhook — 1 email/s peak
+  "/api/stripe/checkout": 5, // P1.5 — 5 prób checkout/min/IP (anti-spam, idempotency 10s buckets)
 };
 
 // Global cap w oknie 60s (killswitch — chroni przed rozproszonym atakiem na endpoint AI)

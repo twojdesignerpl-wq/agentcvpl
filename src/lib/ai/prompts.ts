@@ -1,6 +1,5 @@
 import type { AIContext } from "@/types/ai";
-import type { CVData } from "@/types/cv";
-import type { CVData as SchemaCVData } from "@/lib/cv/schema";
+import type { CVData } from "@/lib/cv/schema";
 import { getIndustryContext, getAntiPatternsPrompt } from "./knowledge-base";
 import { buildChatCVContext } from "./cv-context";
 import { analyzeTone } from "./tone-match";
@@ -147,39 +146,61 @@ export function sanitizeUserInput(s: string | null | undefined, cap: number = PE
 
 // ─── CV Context Builder ───────────────────────────────────────────────────────
 
+function formatYearMonth(year: string, month: string): string {
+  const y = sanitizeUserInput(year, 4);
+  const m = sanitizeUserInput(month, 2);
+  if (y && m) return `${m}.${y}`;
+  return y || "";
+}
+
 function buildCVContext(cvData?: CVData): string {
   if (!cvData) return "";
 
   const parts: string[] = [];
-  const { personalInfo, summary, experience, education, skills, languages, projects } = cvData;
+  const { personal, profile, employment, education, skills, languages, projects } = cvData;
 
-  const name = [personalInfo.firstName, personalInfo.lastName].filter(Boolean).map((v) => sanitizeUserInput(v, 80)).join(" ");
+  const name = [personal.firstName, personal.lastName]
+    .filter(Boolean)
+    .map((v) => sanitizeUserInput(v, 80))
+    .join(" ");
   if (name) parts.push(`Imię i nazwisko: ${name}`);
-  if (personalInfo.city) parts.push(`Miasto: ${sanitizeUserInput(personalInfo.city, 80)}`);
+  if (personal.address) parts.push(`Lokalizacja: ${sanitizeUserInput(personal.address, 120)}`);
+  if (personal.role) parts.push(`Bieżące stanowisko: ${sanitizeUserInput(personal.role, 200)}`);
 
-  if (experience.length > 0) {
+  if (employment.length > 0) {
     parts.push(`\nDoświadczenie zawodowe:`);
-    for (const exp of experience) {
-      const dates = exp.isCurrent
-        ? `${sanitizeUserInput(exp.startDate, 32)} — obecnie`
-        : `${sanitizeUserInput(exp.startDate, 32)} — ${sanitizeUserInput(exp.endDate, 32)}`;
-      parts.push(`  • ${sanitizeUserInput(exp.position, 200)} w ${sanitizeUserInput(exp.company, 200)} (${dates})`);
-      for (const b of exp.bullets) {
-        const text = sanitizeUserInput(b.text);
-        if (text.trim()) parts.push(`    – ${text}`);
+    for (const exp of employment) {
+      const start = formatYearMonth(exp.startYear, exp.startMonth);
+      const end = exp.current
+        ? "obecnie"
+        : formatYearMonth(exp.endYear, exp.endMonth);
+      const dates = [start, end].filter(Boolean).join(" — ");
+      parts.push(
+        `  • ${sanitizeUserInput(exp.position, 200)} w ${sanitizeUserInput(exp.company, 200)}${dates ? ` (${dates})` : ""}`,
+      );
+      const desc = sanitizeUserInput(exp.description);
+      if (desc.trim()) {
+        for (const line of desc.split(/\n+/)) {
+          const trimmed = line.trim();
+          if (trimmed) parts.push(`    – ${trimmed}`);
+        }
       }
     }
   }
 
-  if (summary) parts.push(`\nObecne podsumowanie: "${sanitizeUserInput(summary)}"`);
-  if (skills.length > 0) {
-    const safeSkills = skills.map((s) => sanitizeUserInput(s, 80)).filter(Boolean);
+  if (profile) parts.push(`\nObecne podsumowanie: "${sanitizeUserInput(profile)}"`);
+
+  const allSkills = [...skills.professional, ...skills.personal];
+  if (allSkills.length > 0) {
+    const safeSkills = allSkills.map((s) => sanitizeUserInput(s, 80)).filter(Boolean);
     if (safeSkills.length) parts.push(`Obecne umiejętności: ${safeSkills.join(", ")}`);
   }
 
   if (education.length > 0) {
     const edu = education[0];
-    parts.push(`Edukacja: ${sanitizeUserInput(edu.school, 200)}, ${sanitizeUserInput(edu.degree, 120)} ${sanitizeUserInput(edu.field, 200)}`);
+    parts.push(
+      `Edukacja: ${sanitizeUserInput(edu.school, 200)}, ${sanitizeUserInput(edu.degree, 120)}`,
+    );
   }
 
   if (languages.length > 0) {
@@ -335,7 +356,7 @@ function buildChatPrompt(context: AIContext): string {
   }
 
   if (context.cvData) {
-    const cv = context.cvData as SchemaCVData;
+    const cv = context.cvData as CVData;
     parts.push(
       buildChatCVContext(cv, {
         overflowed: context.overflowed,

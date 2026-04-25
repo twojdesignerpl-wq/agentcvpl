@@ -77,7 +77,13 @@ export async function POST(request: Request): Promise<Response> {
 
         if (session.mode === "subscription") {
           // Subscription flow: aktualizuj plan + audit + email
-          await updateUserPlan(userId, plan, customerId, "Stripe checkout.session.completed (subscription)");
+          await updateUserPlan(
+            userId,
+            plan,
+            customerId,
+            "Stripe checkout.session.completed (subscription)",
+            event.id,
+          );
 
           if (plan === "pro" || plan === "unlimited") {
             if (userEmail) {
@@ -107,8 +113,8 @@ export async function POST(request: Request): Promise<Response> {
               throw insertErr;
             }
 
-            // Audit log
-            await admin.from("plan_grants").insert({
+            // Audit log — idempotentne przez webhook_event_id UNIQUE INDEX
+            const { error: grantErr } = await admin.from("plan_grants").insert({
               user_id: userId,
               email: userEmail,
               from_plan: null,
@@ -116,7 +122,11 @@ export async function POST(request: Request): Promise<Response> {
               reason: "Stripe payment (pro_pack)",
               source: "stripe",
               granted_by: null,
+              webhook_event_id: event.id,
             });
+            if (grantErr && grantErr.code !== "23505") {
+              console.error("[stripe:webhook] plan_grants insert failed:", grantErr);
+            }
 
             // Email — fire-and-forget
             if (userEmail) {
@@ -143,6 +153,7 @@ export async function POST(request: Request): Promise<Response> {
             effective,
             undefined,
             `Stripe subscription.updated (status=${status})`,
+            event.id,
           );
         }
         break;
@@ -151,7 +162,13 @@ export async function POST(request: Request): Promise<Response> {
         const sub = event.data.object as Stripe.Subscription;
         const userId = sub.metadata?.user_id;
         if (userId) {
-          await updateUserPlan(userId, "free", undefined, "Stripe subscription.deleted");
+          await updateUserPlan(
+            userId,
+            "free",
+            undefined,
+            "Stripe subscription.deleted",
+            event.id,
+          );
         }
         break;
       }
@@ -162,9 +179,39 @@ export async function POST(request: Request): Promise<Response> {
 
     return NextResponse.json({ received: true });
   } catch (err) {
+    // Stripe retry'uje przy 5xx aż do wygaśnięcia eventu (>72h). Dla bł. aplikacyjnych
+    // (insert fail, RLS, validation) retry nie pomoże — zwracamy 200 + log.
+    // Dla transient (network/DB) zwracamy 500, żeby Stripe spróbowała ponownie.
     console.error("[stripe:webhook] Handler error:", err);
-    return NextResponse.json({ error: "Handler error" }, { status: 500 });
+    if (isRetriable(err)) {
+      return NextResponse.json(
+        { error: "Transient error", retry: true },
+        { status: 500 },
+      );
+    }
+    return NextResponse.json(
+      {
+        received: true,
+        handler_error: true,
+        message: err instanceof Error ? err.message : String(err),
+      },
+      { status: 200 },
+    );
   }
+}
+
+function isRetriable(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  const msg = err.message.toLowerCase();
+  return (
+    msg.includes("econnreset") ||
+    msg.includes("etimedout") ||
+    msg.includes("eai_again") ||
+    msg.includes("timeout") ||
+    msg.includes("fetch failed") ||
+    msg.includes("network") ||
+    msg.includes("socket hang up")
+  );
 }
 
 async function updateUserPlan(
@@ -172,6 +219,7 @@ async function updateUserPlan(
   plan: string,
   stripeCustomerId?: string,
   reason?: string,
+  eventId?: string,
 ): Promise<void> {
   const admin = createSupabaseServiceClient();
 
@@ -189,20 +237,20 @@ async function updateUserPlan(
   });
   if (error) throw error;
 
-  // Audit log — nie psuj webhoku jeśli insert się buntuje
+  // Audit log — idempotent przez webhook_event_id UNIQUE INDEX (kod 23505 = retry, no-op)
   if (fromPlan !== plan) {
-    try {
-      await admin.from("plan_grants").insert({
-        user_id: userId,
-        email,
-        from_plan: fromPlan,
-        to_plan: plan,
-        reason: reason ?? "Stripe event",
-        source: "stripe",
-        granted_by: null,
-      });
-    } catch (err) {
-      console.error("[stripe:webhook] plan_grants insert failed:", err);
+    const { error: grantErr } = await admin.from("plan_grants").insert({
+      user_id: userId,
+      email,
+      from_plan: fromPlan,
+      to_plan: plan,
+      reason: reason ?? "Stripe event",
+      source: "stripe",
+      granted_by: null,
+      webhook_event_id: eventId ?? null,
+    });
+    if (grantErr && grantErr.code !== "23505") {
+      console.error("[stripe:webhook] plan_grants insert failed:", grantErr);
     }
   }
 }

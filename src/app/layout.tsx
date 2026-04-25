@@ -116,8 +116,18 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+// P1.8: metadataBase preview-aware — w preview deploy OG/canonical wskazuje
+// na URL deploya zamiast hardcoded https://agentcv.pl (Slack/X share = działający link).
+function getMetadataBase(): URL {
+  const fromEnv = process.env.NEXT_PUBLIC_SITE_URL;
+  if (fromEnv) return new URL(fromEnv);
+  if (process.env.VERCEL_ENV === "production") return new URL("https://agentcv.pl");
+  if (process.env.VERCEL_URL) return new URL(`https://${process.env.VERCEL_URL}`);
+  return new URL("http://localhost:3000");
+}
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://agentcv.pl"),
+  metadataBase: getMetadataBase(),
   title: {
     default: "agentcv — Twój Agent CV, który pisze CV dostające rozmowy",
     template: "%s | agentcv",

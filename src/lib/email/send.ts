@@ -10,19 +10,59 @@ type DispatchResult =
   | { ok: true; id: string | null; skipped?: boolean }
   | { ok: false; error: string };
 
-async function wasSent(userId: string, kind: string): Promise<boolean> {
+/**
+ * P1.7: atomic claim slotu na wysyłkę. Próbuje INSERT z partial UNIQUE
+ * (kind='welcome' wymaga UNIQUE na user_id). Zwraca:
+ *   - id wpisu jeśli claim się udał (dispatcher może wysłać mail)
+ *   - null jeśli już istnieje (no-op, mail wcześniej wysłany)
+ *
+ * Po wysyłce — zaktualizuj resend_email_id przez `markDispatchSent`.
+ * Jeśli wysyłka padnie — wywołaj `rollbackDispatch(id)` żeby usunąć slot
+ * i pozwolić następnej próbie.
+ */
+async function claimDispatch(
+  userId: string,
+  kind: "welcome" | "payment" | "plan_granted" | "pack_purchase",
+): Promise<string | null> {
   try {
     const admin = createSupabaseServiceClient();
-    const { data } = await admin
+    const { data, error } = await admin
       .from("email_dispatches")
+      .insert({ user_id: userId, kind, resend_email_id: null })
       .select("id")
-      .eq("user_id", userId)
-      .eq("kind", kind)
-      .maybeSingle();
-    return Boolean(data);
+      .single();
+
+    if (error) {
+      // 23505 = duplicate key (welcome już wysłany dla tego usera)
+      if (error.code === "23505") return null;
+      console.error("[email:claimDispatch]", error);
+      return null;
+    }
+    return (data?.id as string | undefined) ?? null;
   } catch (err) {
-    console.error("[email:wasSent]", err);
-    return false;
+    console.error("[email:claimDispatch]", err);
+    return null;
+  }
+}
+
+async function markDispatchSent(dispatchId: string, resendId: string | null) {
+  try {
+    const admin = createSupabaseServiceClient();
+    await admin
+      .from("email_dispatches")
+      .update({ resend_email_id: resendId })
+      .eq("id", dispatchId);
+  } catch (err) {
+    console.error("[email:markDispatchSent]", err);
+  }
+}
+
+async function rollbackDispatch(dispatchId: string) {
+  try {
+    const admin = createSupabaseServiceClient();
+    await admin.from("email_dispatches").delete().eq("id", dispatchId);
+  } catch (err) {
+    console.error("[email:rollbackDispatch]", err);
   }
 }
 
@@ -47,7 +87,12 @@ export async function sendWelcome(user: {
   name?: string;
 }): Promise<DispatchResult> {
   if (!isResendConfigured()) return { ok: false, error: "resend_not_configured" };
-  if (await wasSent(user.id, "welcome")) return { ok: true, id: null, skipped: true };
+
+  // P1.7: atomic claim — UNIQUE INDEX na (user_id WHERE kind='welcome')
+  // gwarantuje że tylko jeden równoległy caller dostanie dispatchId.
+  const dispatchId = await claimDispatch(user.id, "welcome");
+  if (!dispatchId) return { ok: true, id: null, skipped: true };
+
   try {
     const resend = getResendClient();
     const html = await render(WelcomeEmail({ name: user.name ?? user.email.split("@")[0] }));
@@ -59,11 +104,14 @@ export async function sendWelcome(user: {
       html,
     });
     if (error || !data) {
+      // Wysyłka padła — rollback slotu, żeby kolejna próba mogła go zająć.
+      await rollbackDispatch(dispatchId);
       return { ok: false, error: error?.message ?? "send_failed" };
     }
-    await recordDispatch(user.id, "welcome", data.id);
+    await markDispatchSent(dispatchId, data.id);
     return { ok: true, id: data.id };
   } catch (err) {
+    await rollbackDispatch(dispatchId);
     return { ok: false, error: (err as Error).message };
   }
 }

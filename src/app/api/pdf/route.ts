@@ -2,7 +2,14 @@ import { cvDataSchema } from "@/lib/cv/schema";
 import { renderCVToHTML } from "@/lib/cv/render-html";
 import { requireUser } from "@/lib/auth/guard";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
-import { canDownload, decrementPackCredit, planLimitResponse, recordUsage } from "@/lib/plans/usage";
+import {
+  canDownload,
+  claimPackCredit,
+  refundPackCredit,
+  planLimitResponse,
+  recordUsage,
+  type PackClaim,
+} from "@/lib/plans/usage";
 import { z } from "zod";
 import type { User } from "@supabase/supabase-js";
 
@@ -116,6 +123,24 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const { cvData, effectiveFontSize } = parsed.data;
+
+  // P0.4: claim Pro Pack credit ATOMOWO przed render. Przy błędzie — refund.
+  // canDownload mógł powiedzieć ok dla pro_pack ale w międzyczasie ktoś inny
+  // zajął credit (concurrent download) — wtedy claim zwróci null → 402.
+  let packClaim: PackClaim | null = null;
+  if (authUser && usedPackSource) {
+    packClaim = await claimPackCredit(authUser.id);
+    if (!packClaim) {
+      return planLimitResponse({
+        ok: false,
+        reason: "plan_limit",
+        plan: "pro",
+        limit: 0,
+        used: 0,
+      });
+    }
+  }
+
   const html = renderCVToHTML(cvData, effectiveFontSize);
 
   let browser;
@@ -159,21 +184,21 @@ export async function POST(request: Request): Promise<Response> {
     });
 
     if (pdf.length > MAX_PDF_BYTES) {
+      // PDF wygenerowany ale za duży — refund credit (user nie dostaje pliku).
+      if (packClaim) void refundPackCredit(packClaim.claim_id);
       return new Response(
         JSON.stringify({ error: "PDF wynikowy przekracza limit rozmiaru" }),
         { status: 413, headers: { "Content-Type": "application/json" } },
       );
     }
 
-    // Zapisz usage do audit + dekrementuj pack credit jeśli source=pro_pack
+    // Zapisz usage do audit (credit już zclaimed atomowo PRZED render w P0.4 flow)
     if (authUser) {
       void recordUsage(authUser.id, "pdf", {
         bytes: pdf.length,
         source: usedPackSource ? "pro_pack" : "subscription_or_free",
+        claim_id: packClaim?.claim_id ?? null,
       });
-      if (usedPackSource) {
-        void decrementPackCredit(authUser.id);
-      }
     }
 
     const fileName =
@@ -193,6 +218,8 @@ export async function POST(request: Request): Promise<Response> {
       },
     });
   } catch (err) {
+    // P0.4: render failed — refund credit jeśli był claimed.
+    if (packClaim) void refundPackCredit(packClaim.claim_id);
     const message = err instanceof Error ? err.message : String(err);
     console.error("[/api/pdf] Błąd generowania PDF:", err);
     return new Response(

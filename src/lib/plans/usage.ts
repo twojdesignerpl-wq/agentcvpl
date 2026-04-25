@@ -85,8 +85,8 @@ export async function canDownload(user: User): Promise<UsageCheck> {
 
 /**
  * Dekrementuje 1 kredyt z Pro Pack (FIFO, atomic przez SQL RPC).
- * Wołane PO udanym eksporcie (nie przed — żeby nie tracić credit na błąd Puppeteer).
- * Zwraca liczbę pozostałych credits albo -1 jeśli brak pack/credits.
+ * @deprecated używaj `claimPackCredit` + `refundPackCredit` w pipeline render-then-decrement
+ * (P0.4 atomic claim/refund). Pozostawione dla backward compat / migracja.
  */
 export async function decrementPackCredit(userId: string): Promise<number> {
   try {
@@ -100,6 +100,50 @@ export async function decrementPackCredit(userId: string): Promise<number> {
   } catch (err) {
     console.error("[decrementPackCredit]", err);
     return -1;
+  }
+}
+
+export type PackClaim = { claim_id: string; credits_remaining: number };
+
+/**
+ * Atomic claim Pro Pack credit PRZED render (P0.4 race protection).
+ * RPC: dekrementuje credit + zapisuje plan_credit_claims wiersz w jednej transakcji.
+ * Zwraca null gdy brak dostępnych kredytów (FIFO, kind='pro_pack', active, remaining>0).
+ */
+export async function claimPackCredit(userId: string): Promise<PackClaim | null> {
+  try {
+    const admin = createSupabaseServiceClient();
+    const { data, error } = await admin.rpc("claim_pack_credit", { p_user_id: userId });
+    if (error) {
+      console.error("[claimPackCredit]", error);
+      return null;
+    }
+    if (!Array.isArray(data) || data.length === 0) return null;
+    const row = data[0] as { claim_id?: string; credits_remaining?: number };
+    if (!row.claim_id || typeof row.credits_remaining !== "number") return null;
+    return { claim_id: row.claim_id, credits_remaining: row.credits_remaining };
+  } catch (err) {
+    console.error("[claimPackCredit]", err);
+    return null;
+  }
+}
+
+/**
+ * Refund Pro Pack credit jeśli render fail i claim < 5 min temu.
+ * Zwraca true gdy refund wykonany, false gdy za późno / już refunded / claim nie istnieje.
+ */
+export async function refundPackCredit(claimId: string): Promise<boolean> {
+  try {
+    const admin = createSupabaseServiceClient();
+    const { data, error } = await admin.rpc("refund_pack_credit", { p_claim_id: claimId });
+    if (error) {
+      console.error("[refundPackCredit]", error);
+      return false;
+    }
+    return data === true;
+  } catch (err) {
+    console.error("[refundPackCredit]", err);
+    return false;
   }
 }
 
