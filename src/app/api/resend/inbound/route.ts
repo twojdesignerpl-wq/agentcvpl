@@ -78,28 +78,55 @@ const attachmentSchema = z
   })
   .passthrough();
 
+// Resend Inbound payload format ewoluuje — używamy passthrough + tolerancyjnego
+// dostępu do pól (różne wersje API używały różnych nazw: html / body_html / bodyHtml).
 const inboundSchema = z.object({
   type: z.string(),
   created_at: z.string().optional(),
   data: z
     .object({
       email_id: z.string().optional(),
-      from: z.union([
-        z.string(),
-        z.object({ email: z.string(), name: z.string().optional() }).passthrough(),
-      ]),
-      to: z.array(z.union([z.string(), z.object({ email: z.string() }).passthrough()])).optional(),
+      from: z
+        .union([
+          z.string(),
+          z.object({ email: z.string(), name: z.string().optional() }).passthrough(),
+        ])
+        .optional(),
+      to: z
+        .array(z.union([z.string(), z.object({ email: z.string() }).passthrough()]))
+        .optional(),
       subject: z.string().optional(),
-      html: z.string().optional(),
-      text: z.string().optional(),
       message_id: z.string().optional(),
       in_reply_to: z.string().optional(),
       references: z.array(z.string()).optional(),
-      headers: z.record(z.string(), z.unknown()).optional(),
       attachments: z.array(attachmentSchema).optional(),
     })
     .passthrough(),
 });
+
+/**
+ * Wyciąga string body z payloadu Resend pod różnymi możliwymi nazwami pól.
+ * Resend Inbound API zmieniał format — zapewniamy backward/forward compat.
+ */
+function pickBody(d: Record<string, unknown>, type: "html" | "text"): string | null {
+  const candidates =
+    type === "html"
+      ? ["html", "body_html", "bodyHtml", "html_body", "htmlBody"]
+      : ["text", "body_text", "bodyText", "text_body", "textBody", "plain", "plainText"];
+  for (const key of candidates) {
+    const value = d[key];
+    if (typeof value === "string" && value.length > 0) return value;
+  }
+  // Czasami body jest zagnieżdżone: {body: {html, text}} lub {content: {...}}
+  for (const containerKey of ["body", "content", "message"]) {
+    const container = d[containerKey];
+    if (container && typeof container === "object") {
+      const nested = (container as Record<string, unknown>)[type];
+      if (typeof nested === "string" && nested.length > 0) return nested;
+    }
+  }
+  return null;
+}
 
 function parseAddress(value: unknown): { email: string; name: string | null } {
   if (typeof value === "string") {
@@ -164,6 +191,18 @@ export async function POST(request: Request): Promise<Response> {
   const toList = (d.to ?? []).map(parseAddress);
   const primaryTo = toList[0]?.email ?? "hej@agentcv.pl";
 
+  // Tolerancyjny extract body — Resend zmieniał nazwy pól (html/body_html/...)
+  const dRecord = d as unknown as Record<string, unknown>;
+  const textBody = pickBody(dRecord, "text");
+  const htmlBody = pickBody(dRecord, "html");
+
+  if (!textBody && !htmlBody) {
+    console.warn(
+      "[resend:inbound] payload bez html/text body — keys:",
+      Object.keys(dRecord).join(","),
+    );
+  }
+
   const { error: insertErr } = await admin.from("emails").insert({
     direction: "inbound",
     resend_inbound_id: d.email_id,
@@ -174,9 +213,11 @@ export async function POST(request: Request): Promise<Response> {
     from_name: fromAddr.name,
     to_email: primaryTo,
     subject: d.subject ?? "(bez tematu)",
-    text_body: d.text,
-    html_body: d.html,
-    raw_headers: d.headers ?? null,
+    text_body: textBody,
+    html_body: htmlBody,
+    // Zapisujemy cały data payload (nie tylko headers) — diagnoza brakujących pól
+    // przy przyszłych zmianach formatu Resend Inbound API.
+    raw_headers: d as unknown as Record<string, unknown>,
     attachments: d.attachments ?? null,
   });
 
